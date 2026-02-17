@@ -60,8 +60,16 @@ export default function RoleLayout({ title, user, items, activeKey, onSelect, on
             <p className="text-base font-bold text-slate-900">{title} Dashboard</p>
             <p className="truncate text-xs text-slate-500">{user.name} ({user.office_id})</p>
           </div>
-          <button className="shrink-0 rounded-lg px-3 py-2 text-xs font-bold" onClick={() => setMobileOpen((open) => !open)}>
-            {mobileOpen ? 'Close' : 'Menu'}
+          <button
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            className="shrink-0 rounded-lg bg-slate-100 px-3 py-2 text-slate-700"
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            <span className="relative block h-4 w-5">
+              <span className={`absolute left-0 top-0 h-0.5 w-5 rounded bg-current transition-all ${mobileOpen ? 'translate-y-[7px] rotate-45' : ''}`} />
+              <span className={`absolute left-0 top-[7px] h-0.5 w-5 rounded bg-current transition-all ${mobileOpen ? 'opacity-0' : 'opacity-100'}`} />
+              <span className={`absolute left-0 top-[14px] h-0.5 w-5 rounded bg-current transition-all ${mobileOpen ? '-translate-y-[7px] -rotate-45' : ''}`} />
+            </span>
           </button>
         </div>
       </header>

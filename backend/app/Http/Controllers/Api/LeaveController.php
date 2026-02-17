@@ -128,10 +128,8 @@ class LeaveController extends Controller
     {
         abort_unless($request->user()->role === 'attender', 403);
 
-        $today = now()->toDateString();
         return response()->json(
             LeaveRequest::with('staff:id,name,office_id,branch')
-                ->whereDate('start_date', '>=', $today)
                 ->orderBy('start_date')
                 ->get()
         );
