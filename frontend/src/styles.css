@@ -1,0 +1,635 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #fd7e14;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+body {
+  @apply bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-100 text-slate-800 antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+/* ============================================
+   CARD COMPONENTS
+   ============================================ */
+
+.card {
+  @apply relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 p-6 shadow-2xl shadow-slate-900/10 backdrop-blur-sm transition-all duration-300 md:rounded-3xl;
+}
+
+.card::before {
+  content: '';
+  @apply absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-[#fd7e14] via-orange-400 to-orange-500;
+}
+
+.card:hover {
+  @apply shadow-slate-900/15;
+  transform: translateY(-2px);
+}
+
+.sub-card {
+  @apply rounded-xl border border-slate-200/70 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm transition-all duration-300 hover:shadow-md md:rounded-2xl;
+  position: relative;
+}
+
+.sub-card::after {
+  content: '';
+  @apply absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-[#fd7e14] to-orange-500 transition-all duration-300;
+}
+
+.sub-card:hover::after {
+  @apply w-full;
+}
+
+/* ============================================
+   LAYOUT UTILITIES
+   ============================================ */
+
+.stack {
+  @apply grid gap-6 md:gap-7;
+}
+
+.form {
+  @apply grid gap-5 md:gap-6;
+}
+
+.row {
+  @apply flex flex-wrap items-center gap-2 md:gap-3;
+}
+
+.row.justify-between {
+  @apply items-start gap-3 sm:items-center md:gap-4;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-bold text-slate-900;
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  @apply text-3xl md:text-4xl lg:text-5xl;
+}
+
+h2 {
+  @apply text-2xl md:text-3xl lg:text-4xl;
+}
+
+h3 {
+  @apply text-xl md:text-2xl lg:text-3xl;
+}
+
+h4 {
+  @apply text-lg md:text-xl;
+}
+
+.muted {
+  @apply text-sm text-slate-500;
+}
+
+/* ============================================
+   TABLE STYLES
+   ============================================ */
+
+.table-wrap {
+  @apply mt-4 w-full overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-lg md:rounded-2xl;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  @apply w-full min-w-[640px] border-collapse whitespace-nowrap;
+}
+
+thead {
+  @apply sticky top-0 z-10;
+}
+
+th {
+  @apply bg-gradient-to-r from-slate-100 to-slate-50 px-5 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+td {
+  @apply border-b border-slate-100 px-5 py-4 align-top text-sm text-slate-700 transition-all duration-200;
+}
+
+tr:hover td {
+  @apply bg-gradient-to-r from-orange-50/50 to-transparent;
+}
+
+tbody tr:last-child td {
+  @apply border-b-0;
+}
+
+tbody tr {
+  @apply transition-all duration-200;
+}
+
+tbody tr:hover {
+  transform: scale(1.005);
+}
+
+/* ============================================
+   FORM CONTROLS
+   ============================================ */
+
+textarea,
+input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+select {
+  @apply rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none ring-orange-400/30 transition-all duration-200 placeholder:text-slate-400;
+  font-size: 15px;
+}
+
+textarea:focus,
+input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):focus,
+select:focus {
+  @apply border-orange-400 ring-4;
+  transform: translateY(-1px);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  @apply cursor-not-allowed bg-slate-50 text-slate-500 opacity-60;
+}
+
+textarea {
+  @apply resize-y;
+  min-height: 80px;
+}
+
+label {
+  @apply cursor-pointer transition-all duration-200;
+}
+
+label:has(input:focus),
+label:has(select:focus),
+label:has(textarea:focus) {
+  transform: translateX(2px);
+}
+
+/* File Input Styling */
+input[type="file"] {
+  @apply w-full cursor-pointer rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm transition-all duration-200 hover:border-orange-400 hover:bg-orange-50/50;
+}
+
+input[type="file"]::file-selector-button {
+  @apply mr-4 cursor-pointer rounded-lg border-0 bg-gradient-to-r from-orange-100 to-orange-200 px-4 py-2 text-sm font-semibold text-orange-700 transition-all duration-200 hover:from-orange-200 hover:to-orange-300;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+button {
+  @apply rounded-xl bg-gradient-to-r from-[#fd7e14] to-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.97];
+  position: relative;
+  overflow: hidden;
+}
+
+button::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0;
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+button:hover::before {
+  transform: translateX(100%);
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+button:disabled {
+  @apply cursor-not-allowed opacity-50;
+  transform: none !important;
+}
+
+button:disabled:hover {
+  @apply shadow-lg;
+}
+
+button.ghost {
+  @apply bg-gradient-to-r from-slate-600 to-slate-700 shadow-slate-500/30 hover:shadow-slate-500/40;
+}
+
+button.danger {
+  @apply bg-gradient-to-r from-rose-600 to-rose-700 shadow-rose-500/30 hover:shadow-rose-500/40;
+}
+
+/* ============================================
+   ICON BADGES
+   ============================================ */
+
+.icon-badge {
+  @apply flex h-10 w-10 items-center justify-center rounded-xl text-xl text-white shadow-lg transition-all duration-300;
+}
+
+.icon-badge:hover {
+  @apply scale-110;
+  transform: rotate(5deg) scale(1.1);
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.spinner {
+  @apply h-16 w-16 animate-spin rounded-full border-4 border-slate-200 border-t-[#fd7e14];
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+/* For Webkit browsers */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gradient-to-b from-[#fd7e14] to-orange-600;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gradient-to-b from-orange-600 to-[#fd7e14];
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #fd7e14 #f1f5f9;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.glass-effect {
+  @apply backdrop-blur-lg bg-white/80;
+}
+
+.gradient-text {
+  @apply bg-gradient-to-r from-[#fd7e14] to-orange-600 bg-clip-text text-transparent;
+}
+
+.divider {
+  @apply my-6 h-px w-full bg-gradient-to-r from-transparent via-slate-300 to-transparent;
+}
+
+.swal-small-toast {
+  width: 300px !important;
+  padding: 0.6rem 0.75rem !important;
+  border-radius: 0.7rem !important;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2) !important;
+}
+
+.swal-small-toast-title {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Mobile First - Base styles are mobile by default */
+
+@media (max-width: 640px) {
+  /* Small Mobile Devices (< 640px) */
+  
+  body {
+    @apply text-sm;
+  }
+  
+  .card {
+    @apply rounded-xl p-4;
+  }
+  
+  .card::before {
+    @apply h-0.5;
+  }
+  
+  .sub-card {
+    @apply rounded-lg p-4;
+  }
+  
+  .stack {
+    @apply gap-4;
+  }
+  
+  .form {
+    @apply gap-4;
+  }
+  
+  h1 {
+    @apply text-2xl;
+  }
+  
+  h2 {
+    @apply text-xl;
+  }
+  
+  h3 {
+    @apply text-lg;
+  }
+  
+  h4 {
+    @apply text-base;
+  }
+  
+  /* Table Mobile Optimization */
+  .table-wrap {
+    @apply rounded-lg shadow-md;
+  }
+  
+  th {
+    @apply px-3 py-2.5 text-[10px];
+  }
+  
+  td {
+    @apply px-3 py-2.5 text-xs;
+  }
+  
+  /* Form Controls Mobile */
+  textarea,
+  input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+  select {
+    @apply rounded-lg px-3 py-2.5 text-sm;
+  }
+  
+  /* Buttons Mobile */
+  button {
+    @apply rounded-lg px-4 py-2.5 text-xs;
+  }
+  
+  /* Icon Badges Mobile */
+  .icon-badge {
+    @apply h-8 w-8 rounded-lg text-base;
+  }
+  
+  /* Row Layout Mobile */
+  .row {
+    @apply gap-2;
+  }
+  
+  .row.justify-between {
+    @apply flex-col items-stretch;
+  }
+  
+  /* Reduce shadows on mobile for performance */
+  .card {
+    @apply shadow-lg;
+  }
+  
+  .card:hover {
+    @apply shadow-lg;
+    transform: none;
+  }
+  
+  tbody tr:hover {
+    transform: none;
+  }
+  
+  /* Loading Spinner Mobile */
+  .spinner {
+    @apply h-12 w-12 border-3;
+  }
+  
+  /* Input Focus Mobile - Prevent zoom on iOS */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  
+  /* File input mobile */
+  input[type="file"]::file-selector-button {
+    @apply px-3 py-1.5 text-xs;
+  }
+  
+  /* Scrollbar mobile */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  /* Tablet Devices (641px - 768px) */
+  
+  .card {
+    @apply p-5;
+  }
+  
+  .sub-card {
+    @apply p-4;
+  }
+  
+  th, td {
+    @apply px-4 py-3;
+  }
+  
+  button {
+    @apply px-4 py-2.5;
+  }
+  
+  .icon-badge {
+    @apply h-9 w-9;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Small Desktop / Large Tablet (769px - 1024px) */
+  
+  .card {
+    @apply p-6;
+  }
+  
+  .stack {
+    @apply gap-6;
+  }
+  
+  .form {
+    @apply gap-5;
+  }
+}
+
+@media (min-width: 1025px) {
+  /* Large Desktop (> 1024px) */
+  
+  .card {
+    @apply p-7;
+  }
+  
+  .stack {
+    @apply gap-8;
+  }
+  
+  .form {
+    @apply gap-6;
+  }
+  
+  /* Enhance hover effects on desktop */
+  .card:hover {
+    transform: translateY(-4px);
+  }
+  
+  button:hover {
+    transform: translateY(-3px) scale(1.03);
+  }
+}
+
+/* ============================================
+   LANDSCAPE MODE OPTIMIZATIONS
+   ============================================ */
+
+@media (max-height: 600px) and (orientation: landscape) {
+  /* Landscape Mobile */
+  
+  .card {
+    @apply p-3;
+  }
+  
+  .stack {
+    @apply gap-3;
+  }
+  
+  .form {
+    @apply gap-3;
+  }
+  
+  button {
+    @apply py-2;
+  }
+  
+  textarea,
+  input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+  select {
+    @apply py-2;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  body {
+    @apply bg-white text-black;
+  }
+  
+  .card {
+    @apply border border-gray-300 shadow-none;
+  }
+  
+  button {
+    @apply hidden;
+  }
+  
+  .table-wrap {
+    @apply overflow-visible border-0 shadow-none;
+  }
+  
+  table {
+    @apply min-w-0;
+  }
+}
+
+/* ============================================
+   DARK MODE SUPPORT (if needed in future)
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  /* Uncomment to enable dark mode */
+  /*
+  body {
+    @apply bg-slate-900 text-slate-100;
+  }
+  
+  .card {
+    @apply border-slate-700 bg-slate-800;
+  }
+  
+  input, select, textarea {
+    @apply border-slate-600 bg-slate-700 text-slate-100;
+  }
+  */
+}
+
+/* ============================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================ */
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+  @apply outline-2 outline-offset-2 outline-orange-500;
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .card:hover,
+  button:hover,
+  tbody tr:hover {
+    transform: none !important;
+  }
+}
