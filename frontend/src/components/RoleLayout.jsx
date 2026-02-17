@@ -50,7 +50,7 @@ export default function RoleLayout({ title, user, items, activeKey, onSelect, on
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/20 to-slate-100 lg:grid lg:grid-cols-[320px_1fr]">
+    <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-orange-50/20 to-slate-100 lg:grid lg:grid-cols-[320px_1fr]">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden">
         <div className="mb-2 flex items-center justify-center overflow-hidden">
           <BrandLogo dark size="sm" className="max-w-full" />
@@ -83,11 +83,11 @@ export default function RoleLayout({ title, user, items, activeKey, onSelect, on
         </>
       )}
 
-      <aside className="hidden lg:block">
+      <aside className="hidden h-screen overflow-y-auto lg:block">
         {MenuPanel}
       </aside>
 
-      <main className="p-4 md:p-7 lg:p-8">{children}</main>
+      <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-7 lg:h-screen lg:p-8">{children}</main>
     </div>
   );
 }

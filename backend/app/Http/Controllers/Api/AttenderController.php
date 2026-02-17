@@ -8,6 +8,11 @@ use Illuminate\Http\Request;
 
 class AttenderController extends Controller
 {
+    private function normalizeBranch(string $branch): string
+    {
+        return strtolower(trim($branch));
+    }
+
     public function index(Request $request)
     {
         abort_unless($request->user()->role === 'boss', 403);
@@ -21,7 +26,7 @@ class AttenderController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string'],
             'office_id' => ['required', 'string', 'unique:users,office_id'],
-            'branch' => ['required', 'string'],
+            'branch' => ['required', 'in:main,sm,Main,SM'],
             'pin' => ['required', 'string', 'min:1', 'max:10'],
             'status' => ['required', 'in:currently_working,leaved'],
             'email' => ['nullable', 'email'],
@@ -34,7 +39,7 @@ class AttenderController extends Controller
         $attender = User::create([
             'name' => $validated['name'],
             'office_id' => $validated['office_id'],
-            'branch' => $validated['branch'],
+            'branch' => $this->normalizeBranch($validated['branch']),
             'role' => 'attender',
             'pin_hash' => bcrypt($validated['pin']),
             'status' => $validated['status'],
@@ -54,11 +59,15 @@ class AttenderController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string'],
-            'branch' => ['sometimes', 'string'],
+            'branch' => ['sometimes', 'in:main,sm,Main,SM'],
             'pin' => ['sometimes', 'string', 'min:1', 'max:10'],
             'status' => ['sometimes', 'in:currently_working,leaved'],
             'email' => ['nullable', 'email'],
         ]);
+
+        if (isset($validated['branch'])) {
+            $validated['branch'] = $this->normalizeBranch($validated['branch']);
+        }
 
         if (isset($validated['pin'])) {
             if (User::pinAlreadyUsed($validated['pin'], $user->id)) {

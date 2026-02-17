@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attendance;
 use App\Models\LeaveRequest;
+use App\Models\User;
 use App\Services\LeaveDateService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -25,7 +28,7 @@ class LeaveController extends Controller
             'half_day_slot' => ['nullable', 'in:before_break,after_break'],
             'short_start_time' => ['nullable', 'date_format:H:i'],
             'short_end_time' => ['nullable', 'date_format:H:i'],
-            'reason' => ['nullable', 'string'],
+            'reason' => ['required', 'string'],
         ]);
 
         if ($validated['leave_type'] === 'half_day' && empty($validated['half_day_slot'])) {
@@ -84,6 +87,8 @@ class LeaveController extends Controller
 
         if ($request->user()->role === 'staff') {
             $query->where('staff_id', $request->user()->id);
+        } elseif ($request->user()->role === 'attender') {
+            $query->whereHas('staff', fn ($q) => $q->where('branch', $request->user()->branch));
         }
 
         if ($request->filled('status')) {
@@ -96,6 +101,7 @@ class LeaveController extends Controller
     public function decide(Request $request, LeaveRequest $leaveRequest)
     {
         abort_unless(in_array($request->user()->role, ['attender', 'boss'], true), 403);
+        abort_unless($request->user()->role !== 'attender' || $leaveRequest->staff?->branch === $request->user()->branch, 403);
 
         $validated = $request->validate([
             'status' => ['required', 'in:approved,rejected'],
@@ -130,9 +136,136 @@ class LeaveController extends Controller
 
         return response()->json(
             LeaveRequest::with('staff:id,name,office_id,branch')
+                ->whereHas('staff', fn ($q) => $q->where('branch', $request->user()->branch))
+                ->where('status', 'approved')
                 ->orderBy('start_date')
                 ->get()
         );
+    }
+
+    private function approvedLeaveDaysFor(User $staff): float
+    {
+        return (float) LeaveRequest::where('staff_id', $staff->id)
+            ->where('status', 'approved')
+            ->get()
+            ->sum(function (LeaveRequest $row) {
+                if ($row->leave_type === 'full_day') {
+                    return (float) $row->days_count;
+                }
+                if ($row->leave_type === 'half_day') {
+                    return 0.5;
+                }
+                return 0.25;
+            });
+    }
+
+    private function internAutoLeaveDays(User $staff): int
+    {
+        if ($staff->employment_type !== 'intern') {
+            return 0;
+        }
+
+        $start = Carbon::parse($staff->intern_start_date ?? $staff->joining_date ?? now()->toDateString())->startOfDay();
+        $end = Carbon::parse($staff->intern_end_date ?? now()->toDateString())->startOfDay();
+        $today = now()->startOfDay();
+        if ($end->gt($today)) {
+            $end = $today;
+        }
+        if ($start->gt($end)) {
+            return 0;
+        }
+
+        $attendanceByDate = Attendance::where('staff_id', $staff->id)
+            ->whereDate('date', '>=', $start->toDateString())
+            ->whereDate('date', '<=', $end->toDateString())
+            ->get()
+            ->keyBy(fn ($a) => Carbon::parse($a->date)->toDateString());
+
+        $approvedLeaveDays = LeaveRequest::where('staff_id', $staff->id)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $end->toDateString())
+            ->whereDate('rejoin_date', '>=', $start->toDateString())
+            ->get();
+
+        $approvedLeaveDates = [];
+        foreach ($approvedLeaveDays as $leave) {
+            $cursor = Carbon::parse($leave->start_date)->startOfDay();
+            $endExclusive = $leave->leave_type === 'full_day'
+                ? Carbon::parse($leave->rejoin_date)->startOfDay()
+                : Carbon::parse($leave->start_date)->addDay()->startOfDay();
+            while ($cursor->lt($endExclusive)) {
+                if (!$cursor->isSunday()) {
+                    $approvedLeaveDates[$cursor->toDateString()] = true;
+                }
+                $cursor->addDay();
+            }
+        }
+
+        $missing = 0;
+        $cursor = $start->copy();
+        while ($cursor->lte($end)) {
+            $key = $cursor->toDateString();
+            $attendance = $attendanceByDate->get($key);
+            $isCompanyLeave = (bool) ($attendance?->is_company_leave ?? false);
+            $hasAttendance = $attendance !== null;
+
+            if (!$cursor->isSunday() && !$isCompanyLeave && !$hasAttendance && empty($approvedLeaveDates[$key])) {
+                $missing++;
+            }
+
+            $cursor->addDay();
+        }
+
+        return $missing;
+    }
+
+    private function extendedInternEndDate(User $staff, float $approvedDays): ?string
+    {
+        if ($staff->employment_type !== 'intern') {
+            return null;
+        }
+
+        $baseEnd = $staff->intern_end_date
+            ?? $staff->joining_date
+            ?? now()->toDateString();
+
+        $extensionDays = (int) ceil($approvedDays);
+        return Carbon::parse($baseEnd)->addDays($extensionDays)->toDateString();
+    }
+
+    public function leaveCounts(Request $request)
+    {
+        abort_unless(in_array($request->user()->role, ['staff', 'attender', 'boss'], true), 403);
+
+        if ($request->user()->role === 'staff') {
+            $staffList = User::whereKey($request->user()->id)->get();
+        } elseif ($request->user()->role === 'attender') {
+            $staffList = User::where('role', 'staff')->where('branch', $request->user()->branch)->orderBy('name')->get();
+        } else {
+            $staffList = User::where('role', 'staff')->orderBy('name')->get();
+        }
+
+        $rows = $staffList->map(function (User $staff) {
+            $joiningDate = ($staff->joining_date ?? now())->toDateString();
+            $approvedDays = $this->approvedLeaveDaysFor($staff);
+            $attendedDays = Attendance::where('staff_id', $staff->id)
+                ->where('is_company_leave', false)
+                ->count();
+            $extendedInternEndDate = $this->extendedInternEndDate($staff, $approvedDays);
+            return [
+                'staff_id' => $staff->id,
+                'name' => $staff->name,
+                'office_id' => $staff->office_id,
+                'branch' => $staff->branch,
+                'employment_type' => $staff->employment_type ?? 'permanent',
+                'joining_date' => $joiningDate,
+                'intern_end_date' => $extendedInternEndDate,
+                'attended_days' => $attendedDays,
+                'leave_days' => $approvedDays,
+            ];
+        })->values();
+
+        return response()->json($rows);
     }
 
     public function shortLeaveAlerts(Request $request)
@@ -145,5 +278,41 @@ class LeaveController extends Controller
                 ->whereDate('start_date', now()->toDateString())
                 ->get()
         );
+    }
+
+    public function internEndingAlerts(Request $request)
+    {
+        abort_unless($request->user()->role === 'boss', 403);
+
+        $today = Carbon::today();
+        $limit = $today->copy()->addDays(7);
+
+        $rows = User::where('role', 'staff')
+            ->where('employment_type', 'intern')
+            ->where('status', 'currently_working')
+            ->orderBy('name')
+            ->get()
+            ->map(function (User $staff) use ($today) {
+                $approvedDays = $this->approvedLeaveDaysFor($staff);
+                $effectiveEnd = $this->extendedInternEndDate($staff, $approvedDays);
+                $effectiveEndDate = Carbon::parse($effectiveEnd);
+                $daysLeft = $today->diffInDays($effectiveEndDate, false);
+
+                return [
+                    'staff_id' => $staff->id,
+                    'name' => $staff->name,
+                    'office_id' => $staff->office_id,
+                    'branch' => $staff->branch,
+                    'joining_date' => ($staff->joining_date ?? now())->toDateString(),
+                    'intern_end_date' => $staff->intern_end_date?->toDateString(),
+                    'effective_intern_end_date' => $effectiveEndDate->toDateString(),
+                    'days_left' => $daysLeft,
+                ];
+            })
+            ->filter(fn ($row) => $row['days_left'] >= 0 && $row['days_left'] <= 7)
+            ->sortBy('days_left')
+            ->values();
+
+        return response()->json($rows);
     }
 }

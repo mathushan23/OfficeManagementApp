@@ -16,6 +16,7 @@ Route::middleware('jwt.cookie')->group(function () {
 
     // Staff
     Route::get('/tasklogs/missed/my', [TaskLogController::class, 'myMissedLogs']);
+    Route::get('/tasklogs/my', [TaskLogController::class, 'myHistory']);
     Route::post('/tasklogs/late-requests', [TaskLogController::class, 'requestLateApproval']);
     Route::get('/tasklogs/late-permissions/my', [TaskLogController::class, 'myLatePermissions']);
     Route::post('/leave-requests', [LeaveController::class, 'store']);
@@ -25,6 +26,7 @@ Route::middleware('jwt.cookie')->group(function () {
     // Attender
     Route::get('/attendance/details', [AttendanceController::class, 'details']);
     Route::get('/attendance/staff/{user}/details', [AttendanceController::class, 'staffDetails']);
+    Route::get('/attendance/company-leave-days', [AttendanceController::class, 'companyLeaveDays']);
     Route::get('/staff', [StaffController::class, 'index']);
     Route::get('/staff/{user}/tasklogs', [TaskLogController::class, 'historyForStaff']);
     Route::post('/staff', [StaffController::class, 'store']);
@@ -41,6 +43,7 @@ Route::middleware('jwt.cookie')->group(function () {
     Route::post('/tasklogs/late-permissions', [TaskLogController::class, 'createLatePermission']);
     Route::post('/tasklogs/{taskLog}/allow-late-submit', [TaskLogController::class, 'allowLateSubmit']);
     Route::post('/leave-requests/{leaveRequest}/decision', [LeaveController::class, 'decide']);
+    Route::get('/leave-counts', [LeaveController::class, 'leaveCounts']);
 
     // Boss
     Route::get('/boss/attendance/details', [AttendanceController::class, 'details']);
@@ -50,4 +53,6 @@ Route::middleware('jwt.cookie')->group(function () {
     Route::get('/boss/staff', [StaffController::class, 'index']);
     Route::get('/boss/staff/{user}/tasklogs', [TaskLogController::class, 'historyForStaff']);
     Route::get('/alerts/short-leave', [LeaveController::class, 'shortLeaveAlerts']);
+    Route::get('/alerts/intern-ending', [LeaveController::class, 'internEndingAlerts']);
+    Route::get('/boss/leave-counts', [LeaveController::class, 'leaveCounts']);
 });

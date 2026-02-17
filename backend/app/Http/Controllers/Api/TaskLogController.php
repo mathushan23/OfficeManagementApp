@@ -7,17 +7,27 @@ use App\Models\Attendance;
 use App\Models\TaskLog;
 use App\Models\TaskLogEntry;
 use App\Models\TaskLogLatePermission;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class TaskLogController extends Controller
 {
+    private function ensureAttenderBranch(Request $request, int $staffId): void
+    {
+        if ($request->user()->role !== 'attender') {
+            return;
+        }
+        abort_unless(User::whereKey($staffId)->where('branch', $request->user()->branch)->exists(), 403);
+    }
+
     public function index(Request $request)
     {
         abort_unless($request->user()->role === 'attender', 403);
         return response()->json(
             TaskLog::with(['staff:id,name,office_id,branch', 'entries.proofs'])
+                ->whereHas('staff', fn ($q) => $q->where('branch', $request->user()->branch))
                 ->orderByDesc('log_date')
                 ->limit(200)
                 ->get()
@@ -29,7 +39,7 @@ class TaskLogController extends Controller
         abort_unless($request->user()->role === 'staff', 403);
 
         $validated = $request->validate([
-            'entries' => ['required', 'array', 'min:1'],
+            'entries' => ['required', 'array', 'min:3'],
             'entries.*.start_time' => ['required', 'date_format:H:i'],
             'entries.*.end_time' => ['required', 'date_format:H:i'],
             'entries.*.project_name' => ['required', 'string'],
@@ -67,6 +77,16 @@ class TaskLogController extends Controller
 
         $payloadEntries = $validated['entries'];
         unset($validated['entries']);
+
+        for ($i = 0; $i < count($payloadEntries); $i++) {
+            $entry = $payloadEntries[$i];
+            if ($entry['end_time'] <= $entry['start_time']) {
+                return response()->json(['message' => 'Each entry end time must be later than start time'], 422);
+            }
+            if ($i > 0 && $entry['start_time'] !== $payloadEntries[$i - 1]['end_time']) {
+                return response()->json(['message' => 'Each next entry start time must match previous entry end time'], 422);
+            }
+        }
 
         $log = DB::transaction(function () use ($request, $targetDate, $isLateSubmission, $latePermission, $payloadEntries) {
             $log = TaskLog::create([
@@ -142,6 +162,7 @@ class TaskLogController extends Controller
                     ->on('attendance.date', '=', 'task_logs.log_date');
             })
             ->join('users', 'users.id', '=', 'attendance.staff_id')
+            ->where('users.branch', $request->user()->branch)
             ->where(function ($q) use ($today, $currentTime) {
                 // Show only after day is finished:
                 // 1) Any past date, or
@@ -254,24 +275,34 @@ class TaskLogController extends Controller
     {
         abort_unless($request->user()->role === 'attender', 403);
 
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:pending,approved,rejected'],
+        ]);
+        $status = $validated['status'] ?? null;
+
         $rows = TaskLogLatePermission::query()
             ->join('users', 'users.id', '=', 'task_log_late_permissions.staff_id')
+            ->leftJoin('users as approver', 'approver.id', '=', 'task_log_late_permissions.approved_by')
             ->leftJoin('attendance', function ($join) {
                 $join->on('attendance.staff_id', '=', 'task_log_late_permissions.staff_id')
                     ->on('attendance.date', '=', 'task_log_late_permissions.log_date');
             })
-            ->where('task_log_late_permissions.status', 'pending')
+            ->when($status, fn ($q) => $q->where('task_log_late_permissions.status', $status), fn ($q) => $q->where('task_log_late_permissions.status', 'pending'))
+            ->where('users.branch', $request->user()->branch)
             ->select([
                 'task_log_late_permissions.id',
                 'task_log_late_permissions.staff_id',
                 'users.name as staff_name',
                 'users.office_id',
                 'task_log_late_permissions.log_date',
+                'task_log_late_permissions.status',
                 'attendance.in_time',
                 'attendance.out_time',
                 'task_log_late_permissions.created_at as requested_at',
+                'task_log_late_permissions.decision_at',
+                'approver.name as approved_by_name',
             ])
-            ->orderBy('task_log_late_permissions.created_at')
+            ->orderByDesc('task_log_late_permissions.created_at')
             ->get();
 
         return response()->json($rows);
@@ -280,6 +311,7 @@ class TaskLogController extends Controller
     public function decideLateRequest(Request $request, TaskLogLatePermission $permission)
     {
         abort_unless($request->user()->role === 'attender', 403);
+        $this->ensureAttenderBranch($request, (int) $permission->staff_id);
 
         $validated = $request->validate([
             'status' => ['required', 'in:approved,rejected'],
@@ -308,6 +340,8 @@ class TaskLogController extends Controller
         if ($validated['log_date'] > $today) {
             return response()->json(['message' => 'Only past/today dates are allowed'], 422);
         }
+
+        $this->ensureAttenderBranch($request, (int) $validated['staff_id']);
 
         $attendanceFound = Attendance::where('staff_id', $validated['staff_id'])
             ->whereDate('date', $validated['log_date'])
@@ -346,9 +380,27 @@ class TaskLogController extends Controller
         );
     }
 
+    public function myHistory(Request $request)
+    {
+        abort_unless($request->user()->role === 'staff', 403);
+
+        $query = TaskLog::with('entries.proofs')->where('staff_id', $request->user()->id);
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('log_date', '>=', $request->string('from_date'));
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('log_date', '<=', $request->string('to_date'));
+        }
+
+        return response()->json($query->orderByDesc('log_date')->get());
+    }
+
     public function historyForStaff(Request $request, int $user)
     {
         abort_unless(in_array($request->user()->role, ['boss', 'attender'], true), 403);
+        $this->ensureAttenderBranch($request, $user);
 
         $query = TaskLog::with('entries.proofs')->where('staff_id', $user);
 

@@ -5,13 +5,20 @@ import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 export default function AttenderLatePermissionPage({ token }) {
   const [rows, setRows] = useState([]);
+  const [historyRows, setHistoryRows] = useState([]);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [processingId, setProcessingId] = useState(null);
 
   const load = async () => {
     try {
-      setRows(await api.listLateTaskLogRequests(token));
+      const [pending, approved, rejected] = await Promise.all([
+        api.listLateTaskLogRequests(token, 'pending'),
+        api.listLateTaskLogRequests(token, 'approved'),
+        api.listLateTaskLogRequests(token, 'rejected'),
+      ]);
+      setRows(pending);
+      setHistoryRows([...(approved ?? []), ...(rejected ?? [])].sort((a, b) => String(b.requested_at).localeCompare(String(a.requested_at))));
       setIsError(false);
       setMessage('');
     } catch (err) {
@@ -84,6 +91,35 @@ export default function AttenderLatePermissionPage({ token }) {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-6 border-t border-slate-200 pt-4">
+        <h4 className="mb-3 text-base font-semibold text-slate-800">Late Tasklog Request History</h4>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Staff</th><th>Office ID</th><th>Missed Date</th><th>Status</th><th>Requested At</th><th>Decided At</th><th>Decided By</th></tr>
+            </thead>
+            <tbody>
+              {historyRows.map((row) => (
+                <tr key={`history-${row.id}`}>
+                  <td>{row.staff_name}</td>
+                  <td>{row.office_id}</td>
+                  <td>{row.log_date}</td>
+                  <td>{row.status}</td>
+                  <td>{row.requested_at ?? '-'}</td>
+                  <td>{row.decision_at ?? '-'}</td>
+                  <td>{row.approved_by_name ?? '-'}</td>
+                </tr>
+              ))}
+              {historyRows.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center text-slate-500">No late tasklog history.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       <Message message={message} error={isError} />
     </section>

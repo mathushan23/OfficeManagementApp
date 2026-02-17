@@ -5,13 +5,20 @@ import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 export default function BossLeaveApprovalPage({ token }) {
   const [rows, setRows] = useState([]);
+  const [historyRows, setHistoryRows] = useState([]);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [processingId, setProcessingId] = useState(null);
 
   const load = async () => {
     try {
-      setRows(await api.listLeaveRequests(token, 'pending'));
+      const [pending, approved, rejected] = await Promise.all([
+        api.listLeaveRequests(token, 'pending'),
+        api.listLeaveRequests(token, 'approved'),
+        api.listLeaveRequests(token, 'rejected'),
+      ]);
+      setRows(pending);
+      setHistoryRows([...(approved ?? []), ...(rejected ?? [])].sort((a, b) => String(b.start_date).localeCompare(String(a.start_date))));
       setIsError(false);
       setMessage('');
     } catch (err) {
@@ -78,6 +85,35 @@ export default function BossLeaveApprovalPage({ token }) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-6 border-t border-slate-200 pt-4">
+        <h4 className="mb-3 text-base font-semibold text-slate-800">Leave Request History</h4>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Staff</th><th>Type</th><th>Start</th><th>Days</th><th>Status</th><th>Decision At</th></tr>
+            </thead>
+            <tbody>
+              {historyRows.map((row) => (
+                <tr key={`history-${row.id}`}>
+                  <td>{row.id}</td>
+                  <td>{row.staff?.name ?? '-'}</td>
+                  <td>{row.leave_type}</td>
+                  <td>{row.start_date}</td>
+                  <td>{row.days_count}</td>
+                  <td>{row.status}</td>
+                  <td>{row.decision_at ?? '-'}</td>
+                </tr>
+              ))}
+              {historyRows.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center text-slate-500">No leave request history.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       <Message message={message} error={isError} />
     </section>

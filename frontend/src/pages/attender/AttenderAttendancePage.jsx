@@ -183,17 +183,18 @@ export default function AttenderAttendancePage({ token }) {
 function AttendanceRow({ row, onSave, saving }) {
   const [inTime, setInTime] = useState(row.in_time ?? '');
   const [outTime, setOutTime] = useState(row.out_time ?? '');
+  const isCompanyLeave = Boolean(row.is_company_leave);
 
   return (
-    <tr>
+    <tr className={isCompanyLeave ? 'bg-amber-50' : ''}>
       <td>{row.id}</td>
       <td>{row.staff_id}</td>
       <td>{row.staff?.name ?? '-'}</td>
       <td>{row.date}</td>
-      <td><input value={inTime} onChange={(e) => setInTime(e.target.value)} type="time" /></td>
-      <td><input value={outTime} onChange={(e) => setOutTime(e.target.value)} type="time" /></td>
+      <td>{isCompanyLeave ? <span className="rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">Company Leave</span> : <input value={inTime} onChange={(e) => setInTime(e.target.value)} type="time" />}</td>
+      <td>{isCompanyLeave ? '-' : <input value={outTime} onChange={(e) => setOutTime(e.target.value)} type="time" />}</td>
       <td>
-        <button disabled={saving} onClick={() => onSave(row.id, inTime, outTime)}>
+        <button disabled={saving || isCompanyLeave} onClick={() => onSave(row.id, inTime, outTime)}>
           {saving ? 'Updating...' : 'Update'}
         </button>
       </td>

@@ -7,6 +7,7 @@ import AttenderTaskLogsPage from './AttenderTaskLogsPage';
 import AttenderLatePermissionPage from './AttenderLatePermissionPage';
 import AttenderLeaveApprovalPage from './AttenderLeaveApprovalPage';
 import AttendanceDetailsPage from '../shared/AttendanceDetailsPage';
+import LeaveCountsPage from '../shared/LeaveCountsPage';
 
 const menu = [
   { key: 'staff', label: 'Manage Staff' },
@@ -16,6 +17,7 @@ const menu = [
   { key: 'tasklogs', label: 'View Task Logs' },
   { key: 'late', label: 'Late Tasklog Approvals' },
   { key: 'leave-approve', label: 'Leave Approvals' },
+  { key: 'leave-counts', label: 'Leave Counts' },
 ];
 
 export default function AttenderDashboard({ user, token, onLogout }) {
@@ -37,6 +39,7 @@ export default function AttenderDashboard({ user, token, onLogout }) {
       {active === 'tasklogs' && <AttenderTaskLogsPage token={token} />}
       {active === 'late' && <AttenderLatePermissionPage token={token} />}
       {active === 'leave-approve' && <AttenderLeaveApprovalPage token={token} />}
+      {active === 'leave-counts' && <LeaveCountsPage token={token} title="Branch Staff Leave Counts" />}
     </RoleLayout>
   );
 }

@@ -50,6 +50,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ status }),
     }),
+  leaveCounts: () => request('/leave-counts'),
   leaveCalendar: () => request('/leave-calendar'),
 
   submitTaskLog: (token, payload) =>
@@ -67,11 +68,19 @@ export const api = {
     const query = params.toString();
     return request(`/staff/${staffId}/tasklogs${query ? `?${query}` : ''}`);
   },
+  myTaskLogHistory: (token, filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.from_date) params.set('from_date', filters.from_date);
+    if (filters.to_date) params.set('to_date', filters.to_date);
+    const query = params.toString();
+    return request(`/tasklogs/my${query ? `?${query}` : ''}`);
+  },
   missingTaskLogs: () => request('/tasklogs/missing'),
   myMissedTaskLogs: () => request('/tasklogs/missed/my'),
   requestLateTaskLogApproval: (token, logDate) =>
     request('/tasklogs/late-requests', { method: 'POST', body: JSON.stringify({ log_date: logDate }) }),
-  listLateTaskLogRequests: () => request('/tasklogs/late-requests'),
+  listLateTaskLogRequests: (token, status = '') =>
+    request(`/tasklogs/late-requests${status ? `?status=${encodeURIComponent(status)}` : ''}`),
   decideLateTaskLogRequest: (token, requestId, status) =>
     request(`/tasklogs/late-requests/${requestId}/decision`, { method: 'POST', body: JSON.stringify({ status }) }),
   createLatePermission: (token, payload) =>
@@ -97,8 +106,11 @@ export const api = {
     const query = params.toString();
     return request(`/attendance/staff/${staffId}/details${query ? `?${query}` : ''}`);
   },
+  companyLeaveDays: (token, fromDate, toDate, todayDate) =>
+    request(`/attendance/company-leave-days?from_date=${encodeURIComponent(fromDate)}&to_date=${encodeURIComponent(toDate)}&today_date=${encodeURIComponent(todayDate)}`),
   markAttendance: (token, payload) => request('/attendance', { method: 'POST', body: JSON.stringify(payload) }),
   updateAttendance: (token, id, payload) => request(`/attendance/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
 
   shortLeaveAlerts: () => request('/alerts/short-leave'),
+  internEndingAlerts: () => request('/alerts/intern-ending'),
 };

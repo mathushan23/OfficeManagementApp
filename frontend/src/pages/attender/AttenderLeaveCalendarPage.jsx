@@ -4,14 +4,19 @@ import { Message } from '../../components/FormBits';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 function toDate(value) {
-  return new Date(`${value}T00:00:00`);
+  const [y, m, d] = String(value).split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
 }
 
 function formatKey(date) {
-  return date.toISOString().slice(0, 10);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function leaveTypeBadgeClass(type) {
+  if (type === 'company_leave') return 'bg-violet-100 text-violet-800';
   if (type === 'full_day') return 'bg-rose-100 text-rose-800';
   if (type === 'half_day') return 'bg-amber-100 text-amber-800';
   if (type === 'short_leave') return 'bg-sky-100 text-sky-800';
@@ -34,13 +39,34 @@ function eachLeaveDate(leave, callback) {
 
 export default function AttenderLeaveCalendarPage({ token }) {
   const [rows, setRows] = useState([]);
+  const [companyLeaveDates, setCompanyLeaveDates] = useState([]);
   const [monthCursor, setMonthCursor] = useState(new Date());
   const [message, setMessage] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const localTodayKey = formatKey(new Date());
+
+  const calendarRange = useMemo(() => {
+    const year = monthCursor.getFullYear();
+    const month = monthCursor.getMonth();
+    const first = new Date(year, month, 1);
+    const startOffset = first.getDay();
+    const start = new Date(year, month, 1 - startOffset);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 41);
+    return {
+      from: formatKey(start),
+      to: formatKey(end),
+    };
+  }, [monthCursor]);
 
   const load = async () => {
     try {
-      setRows(await api.leaveCalendar(token));
+      const [leaveRows, companyDays] = await Promise.all([
+        api.leaveCalendar(token),
+        api.companyLeaveDays(token, calendarRange.from, calendarRange.to, localTodayKey),
+      ]);
+      setRows(leaveRows);
+      setCompanyLeaveDates(companyDays);
       setMessage('');
     } catch (err) {
       setMessage(err.message);
@@ -49,8 +75,8 @@ export default function AttenderLeaveCalendarPage({ token }) {
 
   useEffect(() => {
     load();
-  }, []);
-  useAutoRefresh(load, 30000, [token]);
+  }, [calendarRange.from, calendarRange.to]);
+  useAutoRefresh(load, 30000, [token, calendarRange.from, calendarRange.to]);
 
   const markersByDate = useMemo(() => {
     const map = new Map();
@@ -64,8 +90,16 @@ export default function AttenderLeaveCalendarPage({ token }) {
         });
       });
     });
+
+    for (const key of companyLeaveDates) {
+      map.set(key, [{
+        label: 'Company Leave',
+        leave_type: 'company_leave',
+      }]);
+    }
+
     return map;
-  }, [rows]);
+  }, [rows, companyLeaveDates]);
 
   const detailsByDate = useMemo(() => {
     const map = new Map();
@@ -82,8 +116,16 @@ export default function AttenderLeaveCalendarPage({ token }) {
         });
       });
     });
+
+    for (const key of companyLeaveDates) {
+      map.set(key, [{
+        staff_name: 'All Staff',
+        leave_type: 'company_leave',
+      }]);
+    }
+
     return map;
-  }, [rows]);
+  }, [rows, companyLeaveDates]);
 
   const gridDays = useMemo(() => {
     const year = monthCursor.getFullYear();
@@ -179,7 +221,7 @@ export default function AttenderLeaveCalendarPage({ token }) {
                   <div key={`${selectedDate}-${idx}`} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
                     <p className="font-semibold text-slate-800">{item.staff_name}</p>
                     <p className="text-slate-600">
-                      {item.leave_type}
+                      {item.leave_type === 'company_leave' ? 'company_leave (Company Leave)' : item.leave_type}
                       {item.leave_type === 'half_day' && item.half_day_slot ? ` (${item.half_day_slot.replace('_', ' ')})` : ''}
                       {item.leave_type === 'short_leave' && item.short_start_time && item.short_end_time ? ` (${item.short_start_time}-${item.short_end_time})` : ''}
                     </p>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, resolveImageUrl } from '../../api';
 import { Message } from '../../components/FormBits';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
@@ -17,18 +17,28 @@ function groupByDate(logs) {
   }, {});
 }
 
+function toLocalDate(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export default function BossStaffTaskLogsPage({ token }) {
-  const [staff, setStaff] = useState([]);
+  const [todayRows, setTodayRows] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [selectedName, setSelectedName] = useState('');
   const [logs, setLogs] = useState([]);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [message, setMessage] = useState('');
+  const historyRef = useRef(null);
 
-  const loadStaff = async () => {
+  const today = toLocalDate();
+
+  const loadTodayStatus = async () => {
     try {
-      setStaff(await api.listStaffForBoss(token));
+      setTodayRows(await api.attendanceDetails(token, today));
       setMessage('');
     } catch (err) {
       setMessage(err.message);
@@ -36,9 +46,9 @@ export default function BossStaffTaskLogsPage({ token }) {
   };
 
   useEffect(() => {
-    loadStaff();
+    loadTodayStatus();
   }, []);
-  useAutoRefresh(loadStaff, 30000, [token]);
+  useAutoRefresh(loadTodayStatus, 30000, [token]);
 
   const loadLogs = async (staffId, staffName = '', useFilter = false) => {
     try {
@@ -48,6 +58,9 @@ export default function BossStaffTaskLogsPage({ token }) {
         ? { from_date: fromDate || undefined, to_date: toDate || undefined }
         : {};
       setLogs(await api.staffTaskLogHistory(token, staffId, filters));
+      setTimeout(() => {
+        historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 0);
       setMessage('');
     } catch (err) {
       setMessage(err.message);
@@ -60,49 +73,67 @@ export default function BossStaffTaskLogsPage({ token }) {
         <div className="mb-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 text-xl text-white shadow-lg">
-              👥
+              {'\u{1F4CA}'}
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Staff Details</h3>
+            <h3 className="text-xl font-bold text-slate-900">Today Tasklog Status ({today})</h3>
           </div>
-          <button onClick={loadStaff} className="ghost">🔄 Refresh Staff</button>
+          <button onClick={loadTodayStatus} className="ghost">Refresh</button>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Status</th></tr>
+              <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Attendance</th><th>Tasklog</th></tr>
             </thead>
             <tbody>
-              {staff.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.id}</td>
+              {todayRows.map((row) => (
+                <tr key={row.staff_id}>
+                  <td>{row.staff_id}</td>
                   <td>
-                    <button className="bg-transparent p-0 text-left font-semibold text-orange-600 hover:text-orange-500" onClick={() => loadLogs(row.id, row.name)}>
-                      {row.name}
+                    <button className="bg-transparent p-0 text-left font-semibold text-orange-600 hover:text-orange-500" onClick={() => loadLogs(row.staff_id, row.staff_name)}>
+                      {row.staff_name}
                     </button>
                   </td>
                   <td>{row.office_id}</td>
                   <td>{row.branch}</td>
-                  <td>{row.status}</td>
+                  <td>
+                    {row.attendance_id ? (
+                      <span className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">Marked</span>
+                    ) : (
+                      <span className="rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">Not Marked</span>
+                    )}
+                  </td>
+                  <td>
+                    {Number(row.tasklog_submitted) === 1 ? (
+                      <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">Submitted</span>
+                    ) : (
+                      <span className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700">Not Submitted</span>
+                    )}
+                  </td>
                 </tr>
               ))}
+              {todayRows.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="text-center text-slate-500">No staff rows found for today.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </section>
 
       {selectedId && (
-        <section className="card">
+        <section ref={historyRef} className="card">
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 text-xl text-white shadow-lg">
-                📊
+                {'\u{1F4DD}'}
               </div>
               <h3 className="text-xl font-bold text-slate-900">Task Log History - {selectedName || `Staff #${selectedId}`}</h3>
             </div>
             <div className="flex flex-wrap gap-2">
               <input className="flex-1 sm:flex-none" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
               <input className="flex-1 sm:flex-none" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-              <button onClick={() => loadLogs(Number(selectedId), selectedName, true)}>🔍 Apply Filter</button>
+              <button onClick={() => loadLogs(Number(selectedId), selectedName, true)}>Apply Filter</button>
             </div>
           </div>
           {logs.length === 0 && <p className="muted">No tasklogs found for this staff.</p>}

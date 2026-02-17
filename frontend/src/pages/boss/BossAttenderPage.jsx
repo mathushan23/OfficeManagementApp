@@ -8,7 +8,10 @@ function AttenderForm({ initial = {}, submitText, onSubmit, submitting = false, 
     <form className="form" onSubmit={onSubmit}>
       <TextInput label="Name" name="name" minLength="2" defaultValue={initial.name ?? ''} required />
       <TextInput label="Office ID" name="office_id" pattern="^[A-Za-z0-9_-]{2,20}$" title="2-20 letters/numbers/_/-" defaultValue={initial.office_id ?? ''} required disabled={Boolean(initial.id)} />
-      <TextInput label="Branch" name="branch" minLength="2" defaultValue={initial.branch ?? ''} required />
+      <SelectInput label="Branch" name="branch" defaultValue={(initial.branch ?? 'main').toLowerCase()} required>
+        <option value="main">Main</option>
+        <option value="sm">SM</option>
+      </SelectInput>
       <TextInput label="PIN" name="pin" inputMode="numeric" pattern="^[0-9]{1,8}$" maxLength="8" placeholder="Leave empty to keep same" />
       <TextInput label="Email" name="email" type="email" defaultValue={initial.email ?? ''} />
       <SelectInput label="Status" name="status" defaultValue={initial.status ?? 'currently_working'}>
@@ -57,14 +60,14 @@ export default function BossAttenderPage({ token }) {
   const validateProfile = (fd, isUpdate = false) => {
     const name = String(fd.get('name') || '').trim();
     const officeId = String(fd.get('office_id') || '').trim();
-    const branch = String(fd.get('branch') || '').trim();
+    const branch = String(fd.get('branch') || '').trim().toLowerCase();
     const pin = String(fd.get('pin') || '').trim();
     const email = String(fd.get('email') || '').trim();
 
     if (name.length < 2) return 'Name must be at least 2 characters.';
     if (!isUpdate && !officeId) return 'Office ID is required.';
     if (!isUpdate && !/^[A-Za-z0-9_-]{2,20}$/.test(officeId)) return 'Office ID must be 2-20 characters (letters, numbers, _ or -).';
-    if (branch.length < 2) return 'Branch must be at least 2 characters.';
+    if (!['main', 'sm'].includes(branch)) return 'Branch must be Main or SM.';
     if (!isUpdate && !/^\d{1,8}$/.test(pin)) return 'PIN must contain only numbers (1 to 8 digits).';
     if (isUpdate && pin && !/^\d{1,8}$/.test(pin)) return 'PIN must contain only numbers (1 to 8 digits).';
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
@@ -88,7 +91,7 @@ export default function BossAttenderPage({ token }) {
       await api.createAttender(token, {
         name: String(fd.get('name') || '').trim(),
         office_id: String(fd.get('office_id') || '').trim(),
-        branch: String(fd.get('branch') || '').trim(),
+        branch: String(fd.get('branch') || '').trim().toLowerCase(),
         pin: String(fd.get('pin') || '').trim(),
         email: String(fd.get('email') || '').trim() || null,
         status: fd.get('status'),
@@ -119,7 +122,7 @@ export default function BossAttenderPage({ token }) {
     }
     const payload = {
       name: String(fd.get('name') || '').trim(),
-      branch: String(fd.get('branch') || '').trim(),
+      branch: String(fd.get('branch') || '').trim().toLowerCase(),
       email: String(fd.get('email') || '').trim() || null,
       status: fd.get('status'),
     };

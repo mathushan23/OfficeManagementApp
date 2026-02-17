@@ -8,7 +8,7 @@ function createEntry() {
 }
 
 export default function StaffTaskLogPage({ token }) {
-  const [entries, setEntries] = useState([createEntry()]);
+  const [entries, setEntries] = useState([createEntry(), createEntry(), createEntry()]);
   const [selectedDate, setSelectedDate] = useState('today');
   const [approvedDates, setApprovedDates] = useState([]);
   const [missedDates, setMissedDates] = useState([]);
@@ -38,10 +38,22 @@ export default function StaffTaskLogPage({ token }) {
   useAutoRefresh(loadLateData, 30000, [token]);
 
   const updateEntry = (idx, key, value) => {
-    setEntries((prev) => prev.map((entry, i) => (i === idx ? { ...entry, [key]: value } : entry)));
+    setEntries((prev) => {
+      const next = prev.map((entry, i) => (i === idx ? { ...entry, [key]: value } : entry));
+      if (key === 'end_time' && idx < next.length - 1) {
+        next[idx + 1] = { ...next[idx + 1], start_time: value || '' };
+      }
+      return next;
+    });
   };
 
   const addEntry = () => setEntries((prev) => [...prev, createEntry()]);
+  const removeEntry = (idx) => {
+    setEntries((prev) => {
+      if (prev.length <= 3) return prev;
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -90,6 +102,15 @@ export default function StaffTaskLogPage({ token }) {
         });
       }
 
+      if (payloadEntries.length < 3) {
+        throw new Error('Minimum 3 entries are required in task log.');
+      }
+      for (let i = 1; i < payloadEntries.length; i++) {
+        if (payloadEntries[i].start_time !== payloadEntries[i - 1].end_time) {
+          throw new Error('Each next entry start time must match previous entry end time.');
+        }
+      }
+
       const payload = { entries: payloadEntries };
       if (selectedDate !== 'today') {
         payload.log_date = selectedDate;
@@ -97,7 +118,7 @@ export default function StaffTaskLogPage({ token }) {
 
       await api.submitTaskLog(token, payload);
       setMessage('Task log submitted successfully.');
-      setEntries([createEntry()]);
+      setEntries([createEntry(), createEntry(), createEntry()]);
       setSelectedDate('today');
       loadLateData();
     } catch (err) {
@@ -149,6 +170,15 @@ export default function StaffTaskLogPage({ token }) {
                 {idx + 1}
               </span>
               Entry {idx + 1}
+              <button
+                type="button"
+                className="ml-auto !rounded-lg !bg-slate-200 !px-2 !py-1 !text-xs !font-bold !text-slate-700 hover:!bg-slate-300 before:!hidden"
+                onClick={() => removeEntry(idx)}
+                disabled={entries.length <= 3}
+                title={entries.length <= 3 ? 'Minimum 3 entries required' : 'Close this entry'}
+              >
+                X
+              </button>
             </h4>
             <TextInput label="Start Time" type="time" value={entry.start_time} onChange={(e) => updateEntry(idx, 'start_time', e.target.value)} required />
             <TextInput label="End Time" type="time" value={entry.end_time} onChange={(e) => updateEntry(idx, 'end_time', e.target.value)} required />

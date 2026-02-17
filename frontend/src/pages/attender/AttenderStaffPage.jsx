@@ -3,12 +3,34 @@ import { api } from '../../api';
 import { Message, SelectInput, TextInput } from '../../components/FormBits';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
 
+const toDateInputValue = (value) => {
+  if (!value) return '';
+  return String(value).split('T')[0];
+};
+
 function StaffForm({ onSubmit, defaultStatus = 'currently_working', submitText = 'Save', submitting = false, initial = {}, modalMode = false }) {
+  const [employmentType, setEmploymentType] = useState(initial.employment_type ?? 'permanent');
+
+  useEffect(() => {
+    setEmploymentType(initial.employment_type ?? 'permanent');
+  }, [initial.employment_type]);
+
   return (
     <form className="form" onSubmit={onSubmit}>
       <TextInput label="Name" name="name" minLength="2" defaultValue={initial.name ?? ''} required />
       <TextInput label="Office ID" name="office_id" pattern="^[A-Za-z0-9_-]{2,20}$" title="2-20 letters/numbers/_/-" defaultValue={initial.office_id ?? ''} required disabled={Boolean(initial.id)} />
-      <TextInput label="Branch" name="branch" minLength="2" defaultValue={initial.branch ?? ''} required />
+      <SelectInput label="Branch" name="branch" defaultValue={(initial.branch ?? 'main').toLowerCase()} required>
+        <option value="main">Main</option>
+        <option value="sm">SM</option>
+      </SelectInput>
+      <TextInput label="Joining Date" name="joining_date" type="date" defaultValue={toDateInputValue(initial.joining_date)} required />
+      <SelectInput label="Employment Type" name="employment_type" value={employmentType} onChange={(e) => setEmploymentType(e.target.value)} required>
+        <option value="permanent">Permanent</option>
+        <option value="intern">Intern</option>
+      </SelectInput>
+      {employmentType === 'intern' && (
+        <TextInput label="Intern End Date" name="intern_end_date" type="date" defaultValue={toDateInputValue(initial.intern_end_date)} required />
+      )}
       <TextInput label="PIN" name="pin" inputMode="numeric" pattern="^[0-9]{1,8}$" maxLength="8" placeholder="Leave empty to keep same" />
       <TextInput label="Email" name="email" type="email" defaultValue={initial.email ?? ''} />
       <SelectInput label="Status" name="status" defaultValue={initial.status ?? defaultStatus}>
@@ -55,17 +77,23 @@ export default function AttenderStaffPage({ token }) {
   const validateProfile = (fd, isUpdate = false) => {
     const name = String(fd.get('name') || '').trim();
     const officeId = String(fd.get('office_id') || '').trim();
-    const branch = String(fd.get('branch') || '').trim();
+    const branch = String(fd.get('branch') || '').trim().toLowerCase();
     const pin = String(fd.get('pin') || '').trim();
     const email = String(fd.get('email') || '').trim();
+    const employmentType = String(fd.get('employment_type') || 'permanent');
+    const joiningDate = String(fd.get('joining_date') || '').trim();
+    const internEnd = String(fd.get('intern_end_date') || '').trim();
 
     if (name.length < 2) return 'Name must be at least 2 characters.';
     if (!isUpdate && !officeId) return 'Office ID is required.';
     if (!isUpdate && !/^[A-Za-z0-9_-]{2,20}$/.test(officeId)) return 'Office ID must be 2-20 characters (letters, numbers, _ or -).';
-    if (branch.length < 2) return 'Branch must be at least 2 characters.';
+    if (!['main', 'sm'].includes(branch)) return 'Branch must be Main or SM.';
     if (!isUpdate && !/^\d{1,8}$/.test(pin)) return 'PIN must contain only numbers (1 to 8 digits).';
     if (isUpdate && pin && !/^\d{1,8}$/.test(pin)) return 'PIN must contain only numbers (1 to 8 digits).';
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
+    if (!joiningDate || !/^\d{4}-\d{2}-\d{2}$/.test(joiningDate)) return 'Joining date is required.';
+    if (employmentType === 'intern' && !internEnd) return 'Intern end date is required for intern.';
+    if (internEnd && joiningDate && internEnd < joiningDate) return 'Intern end date must be after joining date.';
     return null;
   };
 
@@ -87,10 +115,13 @@ export default function AttenderStaffPage({ token }) {
     const payload = {
       name: String(fd.get('name') || '').trim(),
       office_id: String(fd.get('office_id') || '').trim(),
-      branch: String(fd.get('branch') || '').trim(),
+      branch: String(fd.get('branch') || '').trim().toLowerCase(),
       pin: String(fd.get('pin') || '').trim(),
       email: String(fd.get('email') || '').trim() || null,
       status: fd.get('status'),
+      joining_date: String(fd.get('joining_date') || '').trim() || null,
+      employment_type: String(fd.get('employment_type') || 'permanent'),
+      intern_end_date: String(fd.get('intern_end_date') || '').trim() || null,
     };
     try {
       await api.createStaff(token, payload);
@@ -121,9 +152,12 @@ export default function AttenderStaffPage({ token }) {
     }
     const payload = {
       name: String(fd.get('name') || '').trim(),
-      branch: String(fd.get('branch') || '').trim(),
+      branch: String(fd.get('branch') || '').trim().toLowerCase(),
       status: fd.get('status'),
       email: String(fd.get('email') || '').trim() || null,
+      joining_date: String(fd.get('joining_date') || '').trim() || null,
+      employment_type: String(fd.get('employment_type') || 'permanent'),
+      intern_end_date: String(fd.get('intern_end_date') || '').trim() || null,
     };
     if (fd.get('pin')) payload.pin = String(fd.get('pin') || '').trim();
 
@@ -138,6 +172,11 @@ export default function AttenderStaffPage({ token }) {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const formatDate = (value) => {
+    if (!value) return '-';
+    return String(value).split('T')[0];
   };
 
   return (
@@ -162,7 +201,7 @@ export default function AttenderStaffPage({ token }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Status</th><th>Action</th></tr>
+              <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Joined Date</th><th>Type</th><th>Intern End Date</th><th>Status</th><th>Action</th></tr>
             </thead>
             <tbody>
               {rows.map((row) => (
@@ -171,6 +210,13 @@ export default function AttenderStaffPage({ token }) {
                   <td>{row.name}</td>
                   <td>{row.office_id}</td>
                   <td>{row.branch}</td>
+                  <td>{formatDate(row.joining_date)}</td>
+                  <td>{row.employment_type ?? 'permanent'}</td>
+                  <td>
+                    {(row.employment_type ?? 'permanent') === 'intern'
+                      ? formatDate(row.effective_intern_end_date ?? row.intern_end_date)
+                      : '-'}
+                  </td>
                   <td>{row.status}</td>
                   <td><button onClick={() => setEditing(row)}>Edit</button></td>
                 </tr>

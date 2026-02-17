@@ -138,7 +138,7 @@ export default function StaffLeavePage({ token }) {
           )}
           <label className="grid gap-2">
             <span className="text-sm font-semibold text-slate-700">Reason</span>
-            <textarea name="reason" rows="3" className="rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-slate-900 outline-none ring-orange-400/30 transition-all duration-200 placeholder:text-slate-400 focus:border-orange-400 focus:ring-4" placeholder="Optional reason for leave" />
+            <textarea name="reason" rows="3" className="rounded-xl border-2 border-slate-200 bg-white px-4 py-2.5 text-slate-900 outline-none ring-orange-400/30 transition-all duration-200 placeholder:text-slate-400 focus:border-orange-400 focus:ring-4" placeholder="Enter reason for leave" required />
           </label>
           <button type="submit" disabled={submitting}>
             {submitting ? 'Submitting...' : 'Submit'}

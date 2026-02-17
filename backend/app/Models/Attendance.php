@@ -13,7 +13,12 @@ class Attendance extends Model
         'date',
         'in_time',
         'out_time',
+        'is_company_leave',
         'marked_by',
+    ];
+
+    protected $casts = [
+        'is_company_leave' => 'boolean',
     ];
 
     public function staff()
