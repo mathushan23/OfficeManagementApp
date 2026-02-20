@@ -137,7 +137,9 @@ export default function AttenderAttendancePage({ token }) {
           </label>
           <datalist id="staff-list">
             {staffRows.map((staff) => (
-              <option key={staff.id} value={`${staff.id} - ${staff.name}`} />
+              <option key={staff.id} value={`${staff.id} - ${staff.name}`}>
+                {staff.id} - {staff.name}
+              </option>
             ))}
           </datalist>
 

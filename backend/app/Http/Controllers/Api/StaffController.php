@@ -3,9 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\LeaveRequest;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class StaffController extends Controller
@@ -35,28 +33,9 @@ class StaffController extends Controller
         }
 
         $rows = $query->orderBy('name')->get()->map(function (User $staff) {
-            $approvedDays = (float) LeaveRequest::where('staff_id', $staff->id)
-                ->where('status', 'approved')
-                ->get()
-                ->sum(function (LeaveRequest $row) {
-                    if ($row->leave_type === 'full_day') {
-                        return (float) $row->days_count;
-                    }
-                    if ($row->leave_type === 'half_day') {
-                        return 0.5;
-                    }
-                    return 0.25;
-                });
-
-            $effectiveInternEndDate = null;
-            if (($staff->employment_type ?? 'permanent') === 'intern') {
-                $baseEnd = $staff->intern_end_date
-                    ?? $staff->joining_date
-                    ?? now()->toDateString();
-                $effectiveInternEndDate = Carbon::parse($baseEnd)
-                    ->addDays((int) ceil($approvedDays))
-                    ->toDateString();
-            }
+            $effectiveInternEndDate = ($staff->employment_type ?? 'permanent') === 'intern'
+                ? $staff->intern_end_date?->toDateString()
+                : null;
 
             return array_merge($staff->toArray(), [
                 'effective_intern_end_date' => $effectiveInternEndDate,

@@ -57,6 +57,15 @@ class TaskLogController extends Controller
             return response()->json(['message' => 'Future date is not allowed'], 422);
         }
 
+        if ($targetDate === $today) {
+            $attendanceExists = Attendance::where('staff_id', $request->user()->id)
+                ->whereDate('date', $today)
+                ->exists();
+            if (!$attendanceExists) {
+                return response()->json(['message' => 'Today attendance must be marked before submitting today tasklog'], 422);
+            }
+        }
+
         $latePermission = null;
 
         if ($isLateSubmission) {

@@ -97,6 +97,7 @@ export const api = {
   updateAttender: (token, id, payload) => request(`/attenders/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
 
   listAttendance: () => request('/attendance'),
+  myTodayAttendanceStatus: () => request('/attendance/my-today-status'),
   attendanceDetails: (token, date) =>
     request(`/attendance/details${date ? `?date=${encodeURIComponent(date)}` : ''}`),
   attendanceStaffDetails: (token, staffId, filters = {}) => {

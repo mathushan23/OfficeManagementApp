@@ -149,6 +149,23 @@ class AttendanceController extends Controller
         return response()->json($rows);
     }
 
+    public function myTodayStatus(Request $request)
+    {
+        abort_unless($request->user()->role === 'staff', 403);
+
+        $today = now()->toDateString();
+        $row = Attendance::where('staff_id', $request->user()->id)
+            ->whereDate('date', $today)
+            ->first();
+
+        return response()->json([
+            'date' => $today,
+            'attendance_marked' => $row !== null,
+            'in_time' => $row?->in_time,
+            'out_time' => $row?->out_time,
+        ]);
+    }
+
     public function staffDetails(Request $request, User $user)
     {
         abort_unless(in_array($request->user()->role, ['attender', 'boss'], true), 403);

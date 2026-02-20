@@ -49,6 +49,12 @@ export default function BossLeaveApprovalPage({ token }) {
     }
   };
 
+  const slotOrTime = (row) => {
+    if (row.leave_type === 'half_day' && row.half_day_slot) return row.half_day_slot.replace('_', ' ');
+    if (row.leave_type === 'short_leave' && row.short_start_time && row.short_end_time) return `${row.short_start_time} - ${row.short_end_time}`;
+    return '-';
+  };
+
   return (
     <section className="card">
       <div className="mb-5 flex items-center justify-between gap-3">
@@ -63,7 +69,7 @@ export default function BossLeaveApprovalPage({ token }) {
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>ID</th><th>Staff</th><th>Type</th><th>Start</th><th>Days</th><th>Action</th></tr>
+            <tr><th>ID</th><th>Staff</th><th>Type</th><th>Slot/Time</th><th>Start</th><th>Days</th><th>Action</th></tr>
           </thead>
           <tbody>
             {rows.map((row) => (
@@ -71,6 +77,7 @@ export default function BossLeaveApprovalPage({ token }) {
                 <td>{row.id}</td>
                 <td>{row.staff?.name ?? '-'}</td>
                 <td>{row.leave_type}</td>
+                <td>{slotOrTime(row)}</td>
                 <td>{row.start_date}</td>
                 <td>{row.days_count}</td>
                 <td className="row">
@@ -92,7 +99,7 @@ export default function BossLeaveApprovalPage({ token }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Staff</th><th>Type</th><th>Start</th><th>Days</th><th>Status</th><th>Decision At</th></tr>
+              <tr><th>ID</th><th>Staff</th><th>Type</th><th>Slot/Time</th><th>Start</th><th>Days</th><th>Status</th><th>Decision At</th></tr>
             </thead>
             <tbody>
               {historyRows.map((row) => (
@@ -100,6 +107,7 @@ export default function BossLeaveApprovalPage({ token }) {
                   <td>{row.id}</td>
                   <td>{row.staff?.name ?? '-'}</td>
                   <td>{row.leave_type}</td>
+                  <td>{slotOrTime(row)}</td>
                   <td>{row.start_date}</td>
                   <td>{row.days_count}</td>
                   <td>{row.status}</td>
@@ -108,7 +116,7 @@ export default function BossLeaveApprovalPage({ token }) {
               ))}
               {historyRows.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="text-center text-slate-500">No leave request history.</td>
+                  <td colSpan="8" className="text-center text-slate-500">No leave request history.</td>
                 </tr>
               )}
             </tbody>

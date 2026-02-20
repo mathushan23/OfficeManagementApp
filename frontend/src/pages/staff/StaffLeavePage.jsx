@@ -80,6 +80,14 @@ export default function StaffLeavePage({ token }) {
         setSubmitting(false);
         return;
       }
+      const startMinutes = Number(start.slice(0, 2)) * 60 + Number(start.slice(3, 5));
+      const endMinutes = Number(end.slice(0, 2)) * 60 + Number(end.slice(3, 5));
+      if ((endMinutes - startMinutes) >= 300) {
+        setIsError(true);
+        setMessage('This leave is more than or equal to 5 hours, so it should be applied as half day leave.');
+        setSubmitting(false);
+        return;
+      }
     }
 
     try {

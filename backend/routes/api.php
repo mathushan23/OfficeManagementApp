@@ -15,6 +15,7 @@ Route::middleware('jwt.cookie')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
     // Staff
+    Route::get('/attendance/my-today-status', [AttendanceController::class, 'myTodayStatus']);
     Route::get('/tasklogs/missed/my', [TaskLogController::class, 'myMissedLogs']);
     Route::get('/tasklogs/my', [TaskLogController::class, 'myHistory']);
     Route::post('/tasklogs/late-requests', [TaskLogController::class, 'requestLateApproval']);

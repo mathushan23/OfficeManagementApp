@@ -12,6 +12,7 @@ export default function StaffTaskLogPage({ token }) {
   const [selectedDate, setSelectedDate] = useState('today');
   const [approvedDates, setApprovedDates] = useState([]);
   const [missedDates, setMissedDates] = useState([]);
+  const [todayAttendanceMarked, setTodayAttendanceMarked] = useState(false);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -20,15 +21,22 @@ export default function StaffTaskLogPage({ token }) {
 
   const loadLateData = async () => {
     try {
-      const [approved, missed] = await Promise.all([
+      const [approved, missed, todayStatus] = await Promise.all([
         api.myLatePermissions(token),
         api.myMissedTaskLogs(token),
+        api.myTodayAttendanceStatus(token),
       ]);
       setApprovedDates(approved);
       setMissedDates(missed);
+      const isMarked = Boolean(todayStatus?.attendance_marked);
+      setTodayAttendanceMarked(isMarked);
+      if (!isMarked && selectedDate === 'today') {
+        setSelectedDate(approved?.[0]?.log_date ?? '');
+      }
     } catch {
       setApprovedDates([]);
       setMissedDates([]);
+      setTodayAttendanceMarked(false);
     }
   };
 
@@ -111,9 +119,15 @@ export default function StaffTaskLogPage({ token }) {
         }
       }
 
+      if (!todayAttendanceMarked && !selectedDate) {
+        throw new Error("Your attendance hasn't been marked yet.");
+      }
+
       const payload = { entries: payloadEntries };
       if (selectedDate !== 'today') {
         payload.log_date = selectedDate;
+      } else if (!todayAttendanceMarked) {
+        throw new Error("Your attendance hasn't been marked yet.");
       }
 
       await api.submitTaskLog(token, payload);
@@ -156,11 +170,15 @@ export default function StaffTaskLogPage({ token }) {
         <label className="grid gap-2">
           <span className="text-sm font-semibold text-slate-700">Tasklog Date</span>
           <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
-            <option value="today">{today} (Today)</option>
+            {todayAttendanceMarked && <option value="today">{today} (Today)</option>}
+            {!todayAttendanceMarked && approvedDates.length === 0 && <option value="">No available date</option>}
             {approvedDates.map((row) => (
               <option key={row.id} value={row.log_date}>{row.log_date} (Approved)</option>
             ))}
           </select>
+          {!todayAttendanceMarked && (
+            <p className="text-xs font-semibold text-rose-600">Your attendance hasn't been marked yet.</p>
+          )}
         </label>
 
         {entries.map((entry, idx) => (

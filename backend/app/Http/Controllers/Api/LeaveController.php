@@ -42,6 +42,11 @@ class LeaveController extends Controller
             if ($validated['short_end_time'] <= $validated['short_start_time']) {
                 return response()->json(['message' => 'short_end_time must be later than short_start_time'], 422);
             }
+            $shortStart = Carbon::createFromFormat('H:i', $validated['short_start_time']);
+            $shortEnd = Carbon::createFromFormat('H:i', $validated['short_end_time']);
+            if ($shortEnd->diffInMinutes($shortStart) >= 300) {
+                return response()->json(['message' => 'Short leave is 5 hours or more. Please apply as half day leave.'], 422);
+            }
         }
 
         $days = $validated['leave_type'] === 'full_day' ? ($validated['days_count'] ?? 1) : 1;
@@ -112,6 +117,19 @@ class LeaveController extends Controller
             'approved_by' => $request->user()->id,
             'decision_at' => now(),
         ]);
+
+        if ($validated['status'] === 'approved' && $leaveRequest->staff?->employment_type === 'intern' && $leaveRequest->staff->intern_end_date) {
+            $extensionDays = (int) ceil(match ($leaveRequest->leave_type) {
+                'full_day' => (float) $leaveRequest->days_count,
+                'half_day' => 0.5,
+                default => 0.25,
+            });
+            if ($extensionDays > 0) {
+                $leaveRequest->staff->update([
+                    'intern_end_date' => Carbon::parse($leaveRequest->staff->intern_end_date)->addDays($extensionDays)->toDateString(),
+                ]);
+            }
+        }
 
         if ($leaveRequest->staff?->email) {
             try {
@@ -219,20 +237,6 @@ class LeaveController extends Controller
         return $missing;
     }
 
-    private function extendedInternEndDate(User $staff, float $approvedDays): ?string
-    {
-        if ($staff->employment_type !== 'intern') {
-            return null;
-        }
-
-        $baseEnd = $staff->intern_end_date
-            ?? $staff->joining_date
-            ?? now()->toDateString();
-
-        $extensionDays = (int) ceil($approvedDays);
-        return Carbon::parse($baseEnd)->addDays($extensionDays)->toDateString();
-    }
-
     public function leaveCounts(Request $request)
     {
         abort_unless(in_array($request->user()->role, ['staff', 'attender', 'boss'], true), 403);
@@ -251,7 +255,6 @@ class LeaveController extends Controller
             $attendedDays = Attendance::where('staff_id', $staff->id)
                 ->where('is_company_leave', false)
                 ->count();
-            $extendedInternEndDate = $this->extendedInternEndDate($staff, $approvedDays);
             return [
                 'staff_id' => $staff->id,
                 'name' => $staff->name,
@@ -259,7 +262,7 @@ class LeaveController extends Controller
                 'branch' => $staff->branch,
                 'employment_type' => $staff->employment_type ?? 'permanent',
                 'joining_date' => $joiningDate,
-                'intern_end_date' => $extendedInternEndDate,
+                'intern_end_date' => $staff->intern_end_date?->toDateString(),
                 'attended_days' => $attendedDays,
                 'leave_days' => $approvedDays,
             ];
@@ -285,17 +288,13 @@ class LeaveController extends Controller
         abort_unless($request->user()->role === 'boss', 403);
 
         $today = Carbon::today();
-        $limit = $today->copy()->addDays(7);
-
         $rows = User::where('role', 'staff')
             ->where('employment_type', 'intern')
             ->where('status', 'currently_working')
             ->orderBy('name')
             ->get()
             ->map(function (User $staff) use ($today) {
-                $approvedDays = $this->approvedLeaveDaysFor($staff);
-                $effectiveEnd = $this->extendedInternEndDate($staff, $approvedDays);
-                $effectiveEndDate = Carbon::parse($effectiveEnd);
+                $effectiveEndDate = Carbon::parse($staff->intern_end_date ?? $staff->joining_date ?? now()->toDateString());
                 $daysLeft = $today->diffInDays($effectiveEndDate, false);
 
                 return [
