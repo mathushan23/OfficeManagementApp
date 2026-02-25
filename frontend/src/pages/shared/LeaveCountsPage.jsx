@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { Message } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
-export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnly = false }) {
+export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnly = false, canEdit = false }) {
   const [rows, setRows] = useState([]);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
+  const [savingStaffId, setSavingStaffId] = useState(null);
 
   const load = async () => {
     try {
@@ -23,7 +23,29 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
   useEffect(() => {
     load();
   }, []);
-  useAutoRefresh(load, 30000, [token, selfOnly]);
+  
+  const editLeaveCount = async (row) => {
+    const next = window.prompt(`Enter leave count for ${row.name}:`, `${row.leave_days ?? 0}`);
+    if (next === null) return;
+    const value = Number(next);
+    if (Number.isNaN(value) || value < 0) {
+      setIsError(true);
+      setMessage('Leave count must be a number greater than or equal to 0.');
+      return;
+    }
+    try {
+      setSavingStaffId(row.staff_id);
+      await api.updateLeaveCount(row.staff_id, value);
+      setIsError(false);
+      setMessage('Leave count updated.');
+      await load();
+    } catch (err) {
+      setIsError(true);
+      setMessage(err.message);
+    } finally {
+      setSavingStaffId(null);
+    }
+  };
 
   return (
     <section className="card">
@@ -46,6 +68,7 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
               <th>Intern End Date</th>
               <th>Attended Days</th>
               <th>Leaves</th>
+              {canEdit && <th>Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -60,11 +83,18 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
                 <td>{row.employment_type === 'intern' ? (row.intern_end_date ?? '-') : '-'}</td>
                 <td>{row.attended_days}</td>
                 <td>{row.leave_days}</td>
+                {canEdit && (
+                  <td>
+                    <button onClick={() => editLeaveCount(row)} disabled={savingStaffId === row.staff_id}>
+                      {savingStaffId === row.staff_id ? 'Saving...' : 'Edit'}
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan="9" className="text-center text-slate-500">No leave count data.</td>
+                <td colSpan={canEdit ? 10 : 9} className="text-center text-slate-500">No leave count data.</td>
               </tr>
             )}
           </tbody>
@@ -74,3 +104,4 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
     </section>
   );
 }
+

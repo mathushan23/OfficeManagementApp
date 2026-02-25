@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { Message, TextInput } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 function createEntry() {
   return { start_time: '', end_time: '', project_name: '', description: '', proofFiles: [] };
@@ -43,7 +42,6 @@ export default function StaffTaskLogPage({ token }) {
   useEffect(() => {
     loadLateData();
   }, []);
-  useAutoRefresh(loadLateData, 30000, [token]);
 
   const updateEntry = (idx, key, value) => {
     setEntries((prev) => {
@@ -267,3 +265,4 @@ export default function StaffTaskLogPage({ token }) {
     </section>
   );
 }
+

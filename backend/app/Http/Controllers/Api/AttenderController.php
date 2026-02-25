@@ -26,7 +26,7 @@ class AttenderController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string'],
             'office_id' => ['required', 'string', 'unique:users,office_id'],
-            'branch' => ['required', 'in:main,sm,Main,SM'],
+            'branch' => ['required', 'in:main,sm,kilinochi,Main,SM,Kilinochi'],
             'pin' => ['required', 'string', 'min:1', 'max:10'],
             'status' => ['required', 'in:currently_working,leaved'],
             'email' => ['nullable', 'email'],
@@ -59,7 +59,7 @@ class AttenderController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string'],
-            'branch' => ['sometimes', 'in:main,sm,Main,SM'],
+            'branch' => ['sometimes', 'in:main,sm,kilinochi,Main,SM,Kilinochi'],
             'pin' => ['sometimes', 'string', 'min:1', 'max:10'],
             'status' => ['sometimes', 'in:currently_working,leaved'],
             'email' => ['nullable', 'email'],
@@ -81,3 +81,4 @@ class AttenderController extends Controller
         return response()->json($user);
     }
 }
+

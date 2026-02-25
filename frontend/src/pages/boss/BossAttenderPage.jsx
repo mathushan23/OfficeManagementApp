@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { Message, SelectInput, TextInput } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 function AttenderForm({ initial = {}, submitText, onSubmit, submitting = false, modalMode = false }) {
   return (
@@ -11,6 +10,7 @@ function AttenderForm({ initial = {}, submitText, onSubmit, submitting = false, 
       <SelectInput label="Branch" name="branch" defaultValue={(initial.branch ?? 'main').toLowerCase()} required>
         <option value="main">Main</option>
         <option value="sm">SM</option>
+        <option value="kilinochi">Kilinochi</option>
       </SelectInput>
       <TextInput label="PIN" name="pin" inputMode="numeric" pattern="^[0-9]{1,8}$" maxLength="8" placeholder="Leave empty to keep same" />
       <TextInput label="Email" name="email" type="email" defaultValue={initial.email ?? ''} />
@@ -47,7 +47,6 @@ export default function BossAttenderPage({ token }) {
   useEffect(() => {
     load();
   }, []);
-  useAutoRefresh(load, 30000, [token]);
   useEffect(() => {
     if (!editing) return;
     const prevOverflow = document.body.style.overflow;
@@ -67,7 +66,7 @@ export default function BossAttenderPage({ token }) {
     if (name.length < 2) return 'Name must be at least 2 characters.';
     if (!isUpdate && !officeId) return 'Office ID is required.';
     if (!isUpdate && !/^[A-Za-z0-9_-]{2,20}$/.test(officeId)) return 'Office ID must be 2-20 characters (letters, numbers, _ or -).';
-    if (!['main', 'sm'].includes(branch)) return 'Branch must be Main or SM.';
+    if (!['main', 'sm', 'kilinochi'].includes(branch)) return 'Branch must be Main, SM, or Kilinochi.';
     if (!isUpdate && !/^\d{1,8}$/.test(pin)) return 'PIN must contain only numbers (1 to 8 digits).';
     if (isUpdate && pin && !/^\d{1,8}$/.test(pin)) return 'PIN must contain only numbers (1 to 8 digits).';
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
@@ -209,4 +208,6 @@ export default function BossAttenderPage({ token }) {
     </div>
   );
 }
+
+
 

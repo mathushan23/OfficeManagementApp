@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { Message } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 export default function BossLeaveApprovalPage({ token }) {
   const [rows, setRows] = useState([]);
@@ -30,7 +29,6 @@ export default function BossLeaveApprovalPage({ token }) {
   useEffect(() => {
     load();
   }, []);
-  useAutoRefresh(load, 30000, [token]);
 
   const decide = async (id, status) => {
     const ok = window.confirm(`Are you sure you want to ${status} leave request #${id}?`);
@@ -127,3 +125,4 @@ export default function BossLeaveApprovalPage({ token }) {
     </section>
   );
 }
+

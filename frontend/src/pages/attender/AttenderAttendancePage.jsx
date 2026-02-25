@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { Message, TextInput } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 export default function AttenderAttendancePage({ token }) {
   const [rows, setRows] = useState([]);
@@ -32,7 +31,6 @@ export default function AttenderAttendancePage({ token }) {
   useEffect(() => {
     load();
   }, []);
-  useAutoRefresh(load, 20000, [token]);
 
   const selectedStaffId = useMemo(() => {
     const matched = staffRows.find(
@@ -203,3 +201,4 @@ function AttendanceRow({ row, onSave, saving }) {
     </tr>
   );
 }
+

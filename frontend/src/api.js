@@ -38,6 +38,7 @@ export const api = {
       body: JSON.stringify({ pin }),
     }),
   logout: () => request('/auth/logout', { method: 'POST' }),
+  changePin: (payload) => request('/auth/change-pin', { method: 'POST', body: JSON.stringify(payload) }),
 
   me: () => request('/me'),
 
@@ -51,6 +52,11 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
   leaveCounts: () => request('/leave-counts'),
+  updateLeaveCount: (staffId, leaveDays) =>
+    request(`/boss/leave-counts/${staffId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ leave_days: leaveDays }),
+    }),
   leaveCalendar: () => request('/leave-calendar'),
 
   submitTaskLog: (token, payload) =>
@@ -90,7 +96,13 @@ export const api = {
   listStaff: () => request('/staff'),
   listStaffForBoss: () => request('/boss/staff'),
   createStaff: (token, payload) => request('/staff', { method: 'POST', body: JSON.stringify(payload) }),
-  updateStaff: (token, id, payload) => request(`/staff/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  updateStaff: (token, id, payload) => {
+    if (payload instanceof FormData) {
+      payload.append('_method', 'PUT');
+      return request(`/staff/${id}`, { method: 'POST', body: payload });
+    }
+    return request(`/staff/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  },
 
   listAttenders: () => request('/attenders'),
   createAttender: (token, payload) => request('/attenders', { method: 'POST', body: JSON.stringify(payload) }),
@@ -114,4 +126,12 @@ export const api = {
 
   shortLeaveAlerts: () => request('/alerts/short-leave'),
   internEndingAlerts: () => request('/alerts/intern-ending'),
+  birthdayReminders: () => request('/alerts/birthdays'),
+  myBirthdayWishCard: () => request('/staff/birthday-wish-card'),
+  branchBirthdayWishCards: () => request('/staff/branch-birthday-cards'),
+  updateMyProfilePhoto: (file) => {
+    const formData = new FormData();
+    formData.append('profile_photo', file);
+    return request('/staff/me/profile-photo', { method: 'POST', body: formData });
+  },
 };

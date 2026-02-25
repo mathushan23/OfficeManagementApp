@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../../api';
 import { Message } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 function formatDate(value) {
   if (!value) return '-';
@@ -26,7 +25,6 @@ export default function BossStaffDetailsPage({ token }) {
   useEffect(() => {
     load();
   }, []);
-  useAutoRefresh(load, 30000, [token]);
 
   const selectStaff = (row) => {
     setSelected(row);
@@ -50,7 +48,7 @@ export default function BossStaffDetailsPage({ token }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Joined Date</th><th>Type</th><th>Intern End Date</th><th>Status</th></tr>
+              <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Date of Birth</th><th>Joined Date</th><th>Type</th><th>Intern End Date</th><th>Status</th></tr>
             </thead>
             <tbody>
               {rows.map((row) => (
@@ -63,6 +61,7 @@ export default function BossStaffDetailsPage({ token }) {
                   </td>
                   <td>{row.office_id}</td>
                   <td>{row.branch}</td>
+                  <td>{formatDate(row.date_of_birth)}</td>
                   <td>{formatDate(row.joining_date)}</td>
                   <td>{row.employment_type ?? 'permanent'}</td>
                   <td>{(row.employment_type ?? 'permanent') === 'intern' ? formatDate(row.effective_intern_end_date ?? row.intern_end_date) : '-'}</td>
@@ -71,7 +70,7 @@ export default function BossStaffDetailsPage({ token }) {
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="text-center text-slate-500">No staff records found.</td>
+                  <td colSpan="9" className="text-center text-slate-500">No staff records found.</td>
                 </tr>
               )}
             </tbody>
@@ -86,6 +85,7 @@ export default function BossStaffDetailsPage({ token }) {
             <p><span className="font-semibold">ID:</span> {selected.id}</p>
             <p><span className="font-semibold">Office ID:</span> {selected.office_id}</p>
             <p><span className="font-semibold">Branch:</span> {selected.branch}</p>
+            <p><span className="font-semibold">Date of Birth:</span> {formatDate(selected.date_of_birth)}</p>
             <p><span className="font-semibold">Joined Date:</span> {formatDate(selected.joining_date)}</p>
             <p><span className="font-semibold">Type:</span> {selected.employment_type ?? 'permanent'}</p>
             <p><span className="font-semibold">Intern End Date:</span> {(selected.employment_type ?? 'permanent') === 'intern' ? formatDate(selected.effective_intern_end_date ?? selected.intern_end_date) : '-'}</p>

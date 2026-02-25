@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, resolveImageUrl } from '../../api';
 import { Message } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 function groupByDate(logs) {
   const sorted = [...logs].sort((a, b) => {
@@ -38,7 +37,6 @@ export default function AttenderTaskLogsPage({ token }) {
   useEffect(() => {
     loadStaff();
   }, []);
-  useAutoRefresh(loadStaff, 30000, [token]);
 
   const loadLogs = async (staffId, staffName = '', useFilter = false) => {
     try {
@@ -164,3 +162,4 @@ export default function AttenderTaskLogsPage({ token }) {
     </div>
   );
 }
+

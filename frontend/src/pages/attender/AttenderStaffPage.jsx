@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
+import { resolveImageUrl } from '../../api';
 import { Message, SelectInput, TextInput } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const toDateInputValue = (value) => {
   if (!value) return '';
@@ -22,7 +22,9 @@ function StaffForm({ onSubmit, defaultStatus = 'currently_working', submitText =
       <SelectInput label="Branch" name="branch" defaultValue={(initial.branch ?? 'main').toLowerCase()} required>
         <option value="main">Main</option>
         <option value="sm">SM</option>
+        <option value="kilinochi">Kilinochi</option>
       </SelectInput>
+      <TextInput label="Date of Birth" name="date_of_birth" type="date" defaultValue={toDateInputValue(initial.date_of_birth)} />
       <TextInput label="Joining Date" name="joining_date" type="date" defaultValue={toDateInputValue(initial.joining_date)} required />
       <SelectInput label="Employment Type" name="employment_type" value={employmentType} onChange={(e) => setEmploymentType(e.target.value)} required>
         <option value="permanent">Permanent</option>
@@ -33,6 +35,20 @@ function StaffForm({ onSubmit, defaultStatus = 'currently_working', submitText =
       )}
       <TextInput label="PIN" name="pin" inputMode="numeric" pattern="^[0-9]{1,8}$" maxLength="8" placeholder="Leave empty to keep same" />
       <TextInput label="Email" name="email" type="email" defaultValue={initial.email ?? ''} />
+      <label className="grid gap-2">
+        <span className="text-sm font-semibold text-slate-700">Profile Photo (optional)</span>
+        <input type="file" name="profile_photo" accept="image/*" />
+      </label>
+      {initial.profile_photo && (
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+          <img
+            src={resolveImageUrl(initial.profile_photo)}
+            alt={`${initial.name ?? 'Staff'} profile`}
+            className="h-12 w-12 rounded-full border border-slate-200 object-cover"
+          />
+          <span className="text-xs font-semibold text-slate-600">Current photo</span>
+        </div>
+      )}
       <SelectInput label="Status" name="status" defaultValue={initial.status ?? defaultStatus}>
         <option value="currently_working">Currently Working</option>
         <option value="leaved">Leaved</option>
@@ -64,7 +80,6 @@ export default function AttenderStaffPage({ token }) {
   useEffect(() => {
     load();
   }, []);
-  useAutoRefresh(load, 30000, [token]);
   useEffect(() => {
     if (!editing) return;
     const prevOverflow = document.body.style.overflow;
@@ -80,20 +95,31 @@ export default function AttenderStaffPage({ token }) {
     const branch = String(fd.get('branch') || '').trim().toLowerCase();
     const pin = String(fd.get('pin') || '').trim();
     const email = String(fd.get('email') || '').trim();
+    const dateOfBirth = String(fd.get('date_of_birth') || '').trim();
     const employmentType = String(fd.get('employment_type') || 'permanent');
     const joiningDate = String(fd.get('joining_date') || '').trim();
     const internEnd = String(fd.get('intern_end_date') || '').trim();
+    const profilePhoto = fd.get('profile_photo');
 
     if (name.length < 2) return 'Name must be at least 2 characters.';
     if (!isUpdate && !officeId) return 'Office ID is required.';
     if (!isUpdate && !/^[A-Za-z0-9_-]{2,20}$/.test(officeId)) return 'Office ID must be 2-20 characters (letters, numbers, _ or -).';
-    if (!['main', 'sm'].includes(branch)) return 'Branch must be Main or SM.';
+    if (!['main', 'sm', 'kilinochi'].includes(branch)) return 'Branch must be Main, SM, or Kilinochi.';
     if (!isUpdate && !/^\d{1,8}$/.test(pin)) return 'PIN must contain only numbers (1 to 8 digits).';
     if (isUpdate && pin && !/^\d{1,8}$/.test(pin)) return 'PIN must contain only numbers (1 to 8 digits).';
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address.';
+    if (dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) return 'Date of birth is invalid.';
+    if (dateOfBirth) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (dateOfBirth >= today) return 'Date of birth must be a past date.';
+    }
     if (!joiningDate || !/^\d{4}-\d{2}-\d{2}$/.test(joiningDate)) return 'Joining date is required.';
     if (employmentType === 'intern' && !internEnd) return 'Intern end date is required for intern.';
     if (internEnd && joiningDate && internEnd < joiningDate) return 'Intern end date must be after joining date.';
+    if (profilePhoto && typeof profilePhoto === 'object' && profilePhoto.size > 0) {
+      if (!String(profilePhoto.type || '').startsWith('image/')) return 'Profile photo must be an image file.';
+      if (profilePhoto.size > 5 * 1024 * 1024) return 'Profile photo must be 5MB or smaller.';
+    }
     return null;
   };
 
@@ -112,17 +138,25 @@ export default function AttenderStaffPage({ token }) {
       setMessage(validationError);
       return;
     }
-    const payload = {
-      name: String(fd.get('name') || '').trim(),
-      office_id: String(fd.get('office_id') || '').trim(),
-      branch: String(fd.get('branch') || '').trim().toLowerCase(),
-      pin: String(fd.get('pin') || '').trim(),
-      email: String(fd.get('email') || '').trim() || null,
-      status: fd.get('status'),
-      joining_date: String(fd.get('joining_date') || '').trim() || null,
-      employment_type: String(fd.get('employment_type') || 'permanent'),
-      intern_end_date: String(fd.get('intern_end_date') || '').trim() || null,
-    };
+    const payload = new FormData();
+    payload.append('name', String(fd.get('name') || '').trim());
+    payload.append('office_id', String(fd.get('office_id') || '').trim());
+    payload.append('branch', String(fd.get('branch') || '').trim().toLowerCase());
+    payload.append('pin', String(fd.get('pin') || '').trim());
+    payload.append('status', String(fd.get('status') || 'currently_working'));
+    payload.append('employment_type', String(fd.get('employment_type') || 'permanent'));
+    const email = String(fd.get('email') || '').trim();
+    const dob = String(fd.get('date_of_birth') || '').trim();
+    const joiningDate = String(fd.get('joining_date') || '').trim();
+    const internEndDate = String(fd.get('intern_end_date') || '').trim();
+    if (email) payload.append('email', email);
+    if (dob) payload.append('date_of_birth', dob);
+    if (joiningDate) payload.append('joining_date', joiningDate);
+    if (internEndDate) payload.append('intern_end_date', internEndDate);
+    const profilePhoto = fd.get('profile_photo');
+    if (profilePhoto && typeof profilePhoto === 'object' && profilePhoto.size > 0) {
+      payload.append('profile_photo', profilePhoto);
+    }
     try {
       await api.createStaff(token, payload);
       setMessage('Staff added.');
@@ -150,16 +184,25 @@ export default function AttenderStaffPage({ token }) {
       setMessage(validationError);
       return;
     }
-    const payload = {
-      name: String(fd.get('name') || '').trim(),
-      branch: String(fd.get('branch') || '').trim().toLowerCase(),
-      status: fd.get('status'),
-      email: String(fd.get('email') || '').trim() || null,
-      joining_date: String(fd.get('joining_date') || '').trim() || null,
-      employment_type: String(fd.get('employment_type') || 'permanent'),
-      intern_end_date: String(fd.get('intern_end_date') || '').trim() || null,
-    };
-    if (fd.get('pin')) payload.pin = String(fd.get('pin') || '').trim();
+    const payload = new FormData();
+    payload.append('name', String(fd.get('name') || '').trim());
+    payload.append('branch', String(fd.get('branch') || '').trim().toLowerCase());
+    payload.append('status', String(fd.get('status') || 'currently_working'));
+    payload.append('employment_type', String(fd.get('employment_type') || 'permanent'));
+    const email = String(fd.get('email') || '').trim();
+    const dob = String(fd.get('date_of_birth') || '').trim();
+    const joiningDate = String(fd.get('joining_date') || '').trim();
+    const internEndDate = String(fd.get('intern_end_date') || '').trim();
+    const pin = String(fd.get('pin') || '').trim();
+    if (email) payload.append('email', email);
+    if (dob) payload.append('date_of_birth', dob);
+    if (joiningDate) payload.append('joining_date', joiningDate);
+    if (internEndDate) payload.append('intern_end_date', internEndDate);
+    if (pin) payload.append('pin', pin);
+    const profilePhoto = fd.get('profile_photo');
+    if (profilePhoto && typeof profilePhoto === 'object' && profilePhoto.size > 0) {
+      payload.append('profile_photo', profilePhoto);
+    }
 
     try {
       await api.updateStaff(token, staffId, payload);
@@ -201,15 +244,27 @@ export default function AttenderStaffPage({ token }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Joined Date</th><th>Type</th><th>Intern End Date</th><th>Status</th><th>Action</th></tr>
+              <tr><th>ID</th><th>Photo</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Date of Birth</th><th>Joined Date</th><th>Type</th><th>Intern End Date</th><th>Status</th><th>Action</th></tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id}>
                   <td>{row.id}</td>
+                  <td>
+                    {row.profile_photo ? (
+                      <img
+                        src={resolveImageUrl(row.profile_photo)}
+                        alt={`${row.name} profile`}
+                        className="h-10 w-10 rounded-full border border-slate-200 object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs text-slate-400">-</span>
+                    )}
+                  </td>
                   <td>{row.name}</td>
                   <td>{row.office_id}</td>
                   <td>{row.branch}</td>
+                  <td>{formatDate(row.date_of_birth)}</td>
                   <td>{formatDate(row.joining_date)}</td>
                   <td>{row.employment_type ?? 'permanent'}</td>
                   <td>
@@ -252,4 +307,6 @@ export default function AttenderStaffPage({ token }) {
     </div>
   );
 }
+
+
 

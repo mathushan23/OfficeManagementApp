@@ -35,8 +35,27 @@ export default function App() {
 
   const handleLogout = () => {
     api.logout().catch(() => {});
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const keysToRemove = [];
+      for (let i = 0; i < window.sessionStorage.length; i += 1) {
+        const key = window.sessionStorage.key(i);
+        if (key && key.startsWith('om:dismiss:')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
+    }
     clearAuth();
     setAuth(null);
+  };
+
+  const handleUserUpdated = (user) => {
+    setAuth((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, user };
+      saveAuth(next);
+      return next;
+    });
   };
 
   if (booting) {
@@ -55,7 +74,7 @@ export default function App() {
   }
 
   if (auth.user.role === 'staff') {
-    return <StaffDashboard user={auth.user} onLogout={handleLogout} />;
+    return <StaffDashboard user={auth.user} onLogout={handleLogout} onUserUpdated={handleUserUpdated} />;
   }
 
   if (auth.user.role === 'attender') {

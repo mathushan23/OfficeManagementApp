@@ -15,18 +15,23 @@ class User extends Authenticatable
         'pin_hash',
         'status',
         'email',
+        'profile_photo',
+        'date_of_birth',
         'joining_date',
         'employment_type',
         'intern_start_date',
         'intern_end_date',
+        'leave_count',
     ];
 
     protected $hidden = ['pin_hash'];
 
     protected $casts = [
+        'date_of_birth' => 'date',
         'joining_date' => 'date',
         'intern_start_date' => 'date',
         'intern_end_date' => 'date',
+        'leave_count' => 'float',
     ];
 
     public function setPinAttribute(string $pin): void

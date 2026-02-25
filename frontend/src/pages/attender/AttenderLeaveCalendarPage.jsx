@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { Message } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 function toDate(value) {
   const [y, m, d] = String(value).split('-').map(Number);
@@ -76,7 +75,6 @@ export default function AttenderLeaveCalendarPage({ token }) {
   useEffect(() => {
     load();
   }, [calendarRange.from, calendarRange.to]);
-  useAutoRefresh(load, 30000, [token, calendarRange.from, calendarRange.to]);
 
   const markersByDate = useMemo(() => {
     const map = new Map();
@@ -236,3 +234,4 @@ export default function AttenderLeaveCalendarPage({ token }) {
     </section>
   );
 }
+

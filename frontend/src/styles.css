@@ -194,6 +194,131 @@ button {
   overflow: hidden;
 }
 
+.birthday-modal {
+  animation: birthday-pop-in 320ms ease-out;
+}
+
+.birthday-modern-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 92% 10%, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0) 28%),
+    radial-gradient(circle at 8% 78%, rgba(255,140,0,0.14) 0%, rgba(255,255,255,0) 40%);
+  z-index: 1;
+}
+
+.birthday-modern-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.birthday-sparkles {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 12% 26%, rgba(255, 190, 80, 0.32) 0, rgba(255, 190, 80, 0) 26%),
+    radial-gradient(circle at 80% 74%, rgba(255, 140, 0, 0.25) 0, rgba(255, 140, 0, 0) 30%),
+    radial-gradient(circle at 56% 45%, rgba(255, 255, 255, 0.16) 0, rgba(255, 255, 255, 0) 34%);
+  mix-blend-mode: screen;
+}
+
+.birthday-script {
+  font-family: "Segoe Script", "Brush Script MT", cursive;
+  letter-spacing: 0.02em;
+}
+
+.birthday-photo-wrap {
+  padding: 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fff 0%, #ffb347 45%, #ff5e00 100%);
+  box-shadow: 0 14px 30px rgba(253, 126, 20, 0.45);
+}
+
+.birthday-photo-wrap > img,
+.birthday-photo-wrap > .birthday-photo-fallback {
+  border: 6px solid #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+}
+
+.birthday-photo-fallback {
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 20% 20%, #fcd34d 0%, #f97316 60%, #ea580c 100%);
+  color: #fff;
+  font-size: 4.2rem;
+  font-weight: 900;
+}
+
+.birthday-name-text {
+  color: #ffffff !important;
+  text-shadow: 0 2px 0 rgba(95, 35, 0, 0.45), 0 6px 16px rgba(0, 0, 0, 0.35);
+  letter-spacing: 0.01em;
+  line-height: 1.12;
+  -webkit-text-stroke: 0;
+}
+
+.birthday-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.birthday-confetti .confetti {
+  position: absolute;
+  top: -40px;
+  width: 10px;
+  height: 28px;
+  border-radius: 999px;
+  opacity: 0.85;
+  animation: birthday-fall 2.8s linear infinite;
+}
+
+.birthday-confetti .c1 { left: 8%; background: #fd7e14; animation-delay: 0s; }
+.birthday-confetti .c2 { left: 26%; background: #ef4444; animation-delay: 0.45s; }
+.birthday-confetti .c3 { left: 49%; background: #22c55e; animation-delay: 0.9s; }
+.birthday-confetti .c4 { left: 73%; background: #3b82f6; animation-delay: 1.35s; }
+.birthday-confetti .c5 { left: 91%; background: #eab308; animation-delay: 1.8s; }
+
+@keyframes birthday-pop-in {
+  0% {
+    transform: translateY(14px) scale(0.96);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.birthday-hero {
+  animation: birthday-hero-shimmer 3.2s ease-in-out infinite;
+}
+
+@keyframes birthday-hero-shimmer {
+  0%, 100% {
+    filter: saturate(1);
+  }
+  50% {
+    filter: saturate(1.2);
+  }
+}
+
+@keyframes birthday-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(105vh) rotate(280deg);
+    opacity: 0;
+  }
+}
+
 button::before {
   content: '';
   @apply absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0;

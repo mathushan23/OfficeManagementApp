@@ -13,6 +13,7 @@ Route::post('/auth/logout', [AuthController::class, 'logout']);
 
 Route::middleware('jwt.cookie')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/auth/change-pin', [AuthController::class, 'changePin']);
 
     // Staff
     Route::get('/attendance/my-today-status', [AttendanceController::class, 'myTodayStatus']);
@@ -20,6 +21,8 @@ Route::middleware('jwt.cookie')->group(function () {
     Route::get('/tasklogs/my', [TaskLogController::class, 'myHistory']);
     Route::post('/tasklogs/late-requests', [TaskLogController::class, 'requestLateApproval']);
     Route::get('/tasklogs/late-permissions/my', [TaskLogController::class, 'myLatePermissions']);
+    Route::post('/staff/me/profile-photo', [StaffController::class, 'updateMyProfilePhoto']);
+    Route::get('/staff/branch-birthday-cards', [StaffController::class, 'branchBirthdayWishCards']);
     Route::post('/leave-requests', [LeaveController::class, 'store']);
     Route::post('/tasklogs/proofs', [TaskLogController::class, 'uploadProof']);
     Route::post('/tasklogs', [TaskLogController::class, 'store']);
@@ -30,6 +33,8 @@ Route::middleware('jwt.cookie')->group(function () {
     Route::get('/attendance/company-leave-days', [AttendanceController::class, 'companyLeaveDays']);
     Route::get('/staff', [StaffController::class, 'index']);
     Route::get('/staff/{user}/tasklogs', [TaskLogController::class, 'historyForStaff']);
+    Route::get('/alerts/birthdays', [StaffController::class, 'birthdayReminders']);
+    Route::get('/staff/birthday-wish-card', [StaffController::class, 'myBirthdayWishCard']);
     Route::post('/staff', [StaffController::class, 'store']);
     Route::put('/staff/{user}', [StaffController::class, 'update']);
     Route::get('/attendance', [AttendanceController::class, 'index']);
@@ -56,4 +61,5 @@ Route::middleware('jwt.cookie')->group(function () {
     Route::get('/alerts/short-leave', [LeaveController::class, 'shortLeaveAlerts']);
     Route::get('/alerts/intern-ending', [LeaveController::class, 'internEndingAlerts']);
     Route::get('/boss/leave-counts', [LeaveController::class, 'leaveCounts']);
+    Route::patch('/boss/leave-counts/{user}', [LeaveController::class, 'updateLeaveCount']);
 });

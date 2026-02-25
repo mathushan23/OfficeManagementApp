@@ -64,4 +64,30 @@ class AuthController extends Controller
         $cookieName = (string) config('jwt.cookie_name', 'office_access_token');
         return response()->json(['message' => 'Logged out'])->withoutCookie($cookieName, '/');
     }
+
+    public function changePin(Request $request)
+    {
+        abort_unless($request->user()->role === 'boss', 403);
+
+        $validated = $request->validate([
+            'current_pin' => ['required', 'string', 'min:1', 'max:10'],
+            'new_pin' => ['required', 'string', 'min:1', 'max:10', 'different:current_pin'],
+            'new_pin_confirmation' => ['required', 'same:new_pin'],
+        ]);
+
+        $user = $request->user();
+        if (!Hash::check($validated['current_pin'], $user->pin_hash)) {
+            return response()->json(['message' => 'Current PIN is incorrect'], 422);
+        }
+
+        if (User::pinAlreadyUsed($validated['new_pin'], $user->id)) {
+            return response()->json(['message' => 'New PIN is already used by another user'], 422);
+        }
+
+        $user->update([
+            'pin_hash' => bcrypt($validated['new_pin']),
+        ]);
+
+        return response()->json(['message' => 'Password updated successfully']);
+    }
 }

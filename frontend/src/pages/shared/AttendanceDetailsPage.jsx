@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api';
 import { Message } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 export default function AttendanceDetailsPage({ token, title = 'Attendance Details' }) {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -31,8 +30,6 @@ export default function AttendanceDetailsPage({ token, title = 'Attendance Detai
     load(today);
     api.listStaff(token).then(setStaffList).catch(() => setStaffList([]));
   }, []);
-
-  useAutoRefresh(() => load(date), 30000, [token, date]);
 
   const loadStaffHistory = async () => {
     if (!selectedStaffId) return;
@@ -87,8 +84,8 @@ export default function AttendanceDetailsPage({ token, title = 'Attendance Detai
                 <td>{row.office_id}</td>
                 <td>{row.branch}</td>
                 <td>{row.date}</td>
-                <td>{row.is_company_leave ? <span className="rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">Company Leave</span> : (row.in_time ?? '-')}</td>
-                <td>{row.is_company_leave ? '-' : (row.out_time ?? '-')}</td>
+                <td>{row.in_time ?? '-'}</td>
+                <td>{row.out_time ?? '-'}</td>
                 <td>
                   {Number(row.tasklog_submitted) === 1 ? (
                     <span className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">Submitted</span>
@@ -139,8 +136,8 @@ export default function AttendanceDetailsPage({ token, title = 'Attendance Detai
               {staffHistory.map((row) => (
                 <tr key={row.attendance_id}>
                   <td>{row.date}</td>
-                  <td>{row.is_company_leave ? <span className="rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">Company Leave</span> : (row.in_time ?? '-')}</td>
-                  <td>{row.is_company_leave ? '-' : (row.out_time ?? '-')}</td>
+                  <td>{row.in_time ?? '-'}</td>
+                  <td>{row.out_time ?? '-'}</td>
                   <td>
                     {Number(row.tasklog_submitted) === 1 ? (
                       <span className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">Submitted</span>
@@ -162,3 +159,4 @@ export default function AttendanceDetailsPage({ token, title = 'Attendance Detai
     </section>
   );
 }
+

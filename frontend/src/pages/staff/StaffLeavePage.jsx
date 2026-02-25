@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { Message, SelectInput, TextInput } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 export default function StaffLeavePage({ token }) {
   const [leaveType, setLeaveType] = useState('full_day');
@@ -23,7 +22,6 @@ export default function StaffLeavePage({ token }) {
   useEffect(() => {
     load();
   }, []);
-  useAutoRefresh(load, 30000, [token]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -199,3 +197,4 @@ export default function StaffLeavePage({ token }) {
     </div>
   );
 }
+

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, resolveImageUrl } from '../../api';
 import { Message } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 function groupByDate(logs) {
   const sorted = [...logs].sort((a, b) => {
@@ -41,7 +40,6 @@ export default function StaffTaskLogHistoryPage({ token }) {
   useEffect(() => {
     load();
   }, []);
-  useAutoRefresh(() => load(Boolean(fromDate || toDate)), 30000, [token, fromDate, toDate]);
 
   return (
     <section className="card">
@@ -116,4 +114,5 @@ export default function StaffTaskLogHistoryPage({ token }) {
     </section>
   );
 }
+
 

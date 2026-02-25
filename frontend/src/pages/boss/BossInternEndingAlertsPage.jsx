@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { Message } from '../../components/FormBits';
-import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 export default function BossInternEndingAlertsPage({ token }) {
   const [rows, setRows] = useState([]);
@@ -20,7 +19,6 @@ export default function BossInternEndingAlertsPage({ token }) {
   useEffect(() => {
     load();
   }, []);
-  useAutoRefresh(load, 30000, [token]);
 
   return (
     <section className="card">
@@ -61,4 +59,5 @@ export default function BossInternEndingAlertsPage({ token }) {
     </section>
   );
 }
+
 

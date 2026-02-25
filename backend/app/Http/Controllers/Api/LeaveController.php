@@ -112,13 +112,20 @@ class LeaveController extends Controller
             'status' => ['required', 'in:approved,rejected'],
         ]);
 
+        $previousStatus = $leaveRequest->status;
+
         $leaveRequest->update([
             'status' => $validated['status'],
             'approved_by' => $request->user()->id,
             'decision_at' => now(),
         ]);
 
-        if ($validated['status'] === 'approved' && $leaveRequest->staff?->employment_type === 'intern' && $leaveRequest->staff->intern_end_date) {
+        if (
+            $previousStatus !== 'approved'
+            && $validated['status'] === 'approved'
+            && $leaveRequest->staff?->employment_type === 'intern'
+            && $leaveRequest->staff->intern_end_date
+        ) {
             $extensionDays = (int) ceil(match ($leaveRequest->leave_type) {
                 'full_day' => (float) $leaveRequest->days_count,
                 'half_day' => 0.5,
@@ -128,6 +135,32 @@ class LeaveController extends Controller
                 $leaveRequest->staff->update([
                     'intern_end_date' => Carbon::parse($leaveRequest->staff->intern_end_date)->addDays($extensionDays)->toDateString(),
                 ]);
+            }
+        }
+
+        if ($leaveRequest->staff) {
+            $staff = $leaveRequest->staff->fresh();
+            $units = $this->leaveUnitsForRequest($leaveRequest);
+
+            // If boss never edited leave_count, keep it synced to approved leaves.
+            if ($staff->leave_count === null) {
+                $staff->update([
+                    'leave_count' => round($this->approvedLeaveDaysFor($staff), 2),
+                ]);
+            } else {
+                // If boss edited leave_count manually, apply status delta on top of manual baseline.
+                $next = (float) $staff->leave_count;
+                if ($previousStatus !== 'approved' && $validated['status'] === 'approved') {
+                    $next += $units;
+                } elseif ($previousStatus === 'approved' && $validated['status'] !== 'approved') {
+                    $next = max(0, $next - $units);
+                }
+
+                if (abs($next - (float) $staff->leave_count) > 0.00001) {
+                    $staff->update([
+                        'leave_count' => round($next, 2),
+                    ]);
+                }
             }
         }
 
@@ -175,6 +208,17 @@ class LeaveController extends Controller
                 }
                 return 0.25;
             });
+    }
+
+    private function leaveUnitsForRequest(LeaveRequest $leaveRequest): float
+    {
+        if ($leaveRequest->leave_type === 'full_day') {
+            return (float) $leaveRequest->days_count;
+        }
+        if ($leaveRequest->leave_type === 'half_day') {
+            return 0.5;
+        }
+        return 0.25;
     }
 
     private function internAutoLeaveDays(User $staff): int
@@ -264,7 +308,9 @@ class LeaveController extends Controller
                 'joining_date' => $joiningDate,
                 'intern_end_date' => $staff->intern_end_date?->toDateString(),
                 'attended_days' => $attendedDays,
-                'leave_days' => $approvedDays,
+                'leave_days' => $staff->leave_count ?? $approvedDays,
+                'leave_days_auto' => $approvedDays,
+                'leave_count' => $staff->leave_count,
             ];
         })->values();
 
@@ -313,5 +359,26 @@ class LeaveController extends Controller
             ->values();
 
         return response()->json($rows);
+    }
+
+    public function updateLeaveCount(Request $request, User $user)
+    {
+        abort_unless($request->user()->role === 'boss', 403);
+        abort_unless($user->role === 'staff', 422, 'Selected user is not staff');
+
+        $validated = $request->validate([
+            'leave_days' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $leaveDays = round((float) $validated['leave_days'], 2);
+        $user->update([
+            'leave_count' => $leaveDays,
+        ]);
+
+        return response()->json([
+            'message' => 'Leave count updated',
+            'staff_id' => $user->id,
+            'leave_days' => $leaveDays,
+        ]);
     }
 }
