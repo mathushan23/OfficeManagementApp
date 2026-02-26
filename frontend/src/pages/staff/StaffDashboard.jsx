@@ -8,14 +8,14 @@ import StaffBirthdayPopup from '../../components/StaffBirthdayPopup';
 import LeaveCountsPage from '../shared/LeaveCountsPage';
 
 const menu = [
-  { key: 'leave', label: 'Leave Request' },
   { key: 'tasklog', label: 'Add Task Log' },
+  { key: 'leave', label: 'Leave Request' },
   { key: 'tasklog-history', label: 'My Tasklog History' },
   { key: 'leave-counts', label: 'My Leave Count' },
 ];
 
 export default function StaffDashboard({ user, token, onLogout, onUserUpdated }) {
-  const [active, setActive] = useState('leave');
+  const [active, setActive] = useState('tasklog');
   const [birthdayCards, setBirthdayCards] = useState([]);
   const [birthdayCardIndex, setBirthdayCardIndex] = useState(0);
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);

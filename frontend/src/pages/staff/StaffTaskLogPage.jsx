@@ -167,7 +167,7 @@ export default function StaffTaskLogPage({ token }) {
       <form className="form" onSubmit={submit}>
         <label className="grid gap-2">
           <span className="text-sm font-semibold text-slate-700">Tasklog Date</span>
-          <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
+          <select className="w-full" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
             {todayAttendanceMarked && <option value="today">{today} (Today)</option>}
             {!todayAttendanceMarked && approvedDates.length === 0 && <option value="">No available date</option>}
             {approvedDates.map((row) => (

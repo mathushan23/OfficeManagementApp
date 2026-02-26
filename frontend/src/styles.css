@@ -532,6 +532,14 @@ button.danger {
   input:not([type="file"]):not([type="checkbox"]):not([type="radio"]),
   select {
     @apply rounded-lg px-3 py-2.5 text-sm;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Keep native mobile dropdown positioning stable */
+  select:focus,
+  label:has(select:focus) {
+    transform: none !important;
   }
   
   /* Buttons Mobile */
