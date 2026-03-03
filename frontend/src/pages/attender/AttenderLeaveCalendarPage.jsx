@@ -16,6 +16,7 @@ function formatKey(date) {
 
 function leaveTypeBadgeClass(type) {
   if (type === 'company_leave') return 'bg-violet-100 text-violet-800';
+  if (type === 'special_leave') return 'bg-emerald-100 text-emerald-800';
   if (type === 'full_day') return 'bg-rose-100 text-rose-800';
   if (type === 'half_day') return 'bg-amber-100 text-amber-800';
   if (type === 'short_leave') return 'bg-sky-100 text-sky-800';

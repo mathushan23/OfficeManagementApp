@@ -7,6 +7,10 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [savingStaffId, setSavingStaffId] = useState(null);
+  const [detailsLoadingStaffId, setDetailsLoadingStaffId] = useState(null);
+  const [detailsTitle, setDetailsTitle] = useState('');
+  const [detailsRows, setDetailsRows] = useState([]);
+  const [detailsTotal, setDetailsTotal] = useState(0);
 
   const load = async () => {
     try {
@@ -47,6 +51,31 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
     }
   };
 
+  const sourceLabel = (source) => {
+    if (source === 'missing_attendance') return 'Attendance Not Marked';
+    if (source === 'approved_full_day') return 'Approved Full Day';
+    if (source === 'approved_half_day') return 'Approved Half Day';
+    if (source === 'approved_short_leave') return 'Approved Short Leave';
+    return source ?? '-';
+  };
+
+  const openLeaveDetails = async (row) => {
+    try {
+      setDetailsLoadingStaffId(row.staff_id);
+      const data = await api.leaveDetails(row.staff_id);
+      setDetailsTitle(`${data.name} (${data.office_id})`);
+      setDetailsRows(Array.isArray(data.rows) ? data.rows : []);
+      setDetailsTotal(Number(data.total_leave_days ?? 0));
+      setMessage('');
+      setIsError(false);
+    } catch (err) {
+      setIsError(true);
+      setMessage(err.message);
+    } finally {
+      setDetailsLoadingStaffId(null);
+    }
+  };
+
   return (
     <section className="card">
       <div className="mb-5 flex items-center gap-3">
@@ -68,7 +97,7 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
               <th>Intern End Date</th>
               <th>Attended Days</th>
               <th>Leaves</th>
-              {canEdit && <th>Action</th>}
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -83,23 +112,62 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
                 <td>{row.employment_type === 'intern' ? (row.intern_end_date ?? '-') : '-'}</td>
                 <td>{row.attended_days}</td>
                 <td>{row.leave_days}</td>
-                {canEdit && (
-                  <td>
+                <td className="whitespace-nowrap">
+                  <button onClick={() => openLeaveDetails(row)} disabled={detailsLoadingStaffId === row.staff_id}>
+                    {detailsLoadingStaffId === row.staff_id ? 'Loading...' : 'Leave Details'}
+                  </button>
+                  {canEdit && (
+                    <span className="ml-2 inline-block">
                     <button onClick={() => editLeaveCount(row)} disabled={savingStaffId === row.staff_id}>
                       {savingStaffId === row.staff_id ? 'Saving...' : 'Edit'}
                     </button>
-                  </td>
-                )}
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={canEdit ? 10 : 9} className="text-center text-slate-500">No leave count data.</td>
+                <td colSpan={10} className="text-center text-slate-500">No leave count data.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      {detailsTitle && (
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h4 className="text-base font-bold text-slate-900">Leave Details: {detailsTitle}</h4>
+            <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+              Total: {detailsTotal}
+            </span>
+          </div>
+          {detailsRows.length === 0 ? (
+            <p className="text-sm text-slate-500">No leave dates found.</p>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Leave Value</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detailsRows.map((item) => (
+                    <tr key={`${item.date}-${item.source}`}>
+                      <td>{item.date}</td>
+                      <td>{item.leave_value}</td>
+                      <td>{sourceLabel(item.source)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
       <Message message={message} error={isError} />
     </section>
   );

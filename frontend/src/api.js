@@ -1,11 +1,15 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api';
 
+
 export function resolveImageUrl(pathOrUrl) {
   if (!pathOrUrl) return '';
   if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) return pathOrUrl;
 
   const backendBase = API_BASE_URL.replace(/\/api\/?$/, '');
   const normalized = pathOrUrl.startsWith('/') ? pathOrUrl.slice(1) : pathOrUrl;
+  if (normalized.startsWith('staff-profiles/')) return `${backendBase}/${normalized}`;
+  if (normalized.startsWith('tasklog-proofs/')) return `${backendBase}/${normalized}`;
+  if (normalized.startsWith('petty-cash-proofs/')) return `${backendBase}/${normalized}`;
   if (normalized.startsWith('storage/')) return `${backendBase}/${normalized}`;
   return `${backendBase}/storage/${normalized}`;
 }
@@ -52,6 +56,7 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
   leaveCounts: () => request('/leave-counts'),
+  leaveDetails: (staffId) => request(`/leave-counts/${staffId}/details`),
   updateLeaveCount: (staffId, leaveDays) =>
     request(`/boss/leave-counts/${staffId}`, {
       method: 'PATCH',
@@ -95,7 +100,7 @@ export const api = {
 
   listStaff: () => request('/staff'),
   listStaffForBoss: () => request('/boss/staff'),
-  createStaff: (token, payload) => request('/staff', { method: 'POST', body: JSON.stringify(payload) }),
+  createStaff: (token, payload) => request('/staff', { method: 'POST', body: payload }),
   updateStaff: (token, id, payload) => {
     if (payload instanceof FormData) {
       payload.append('_method', 'PUT');
@@ -127,6 +132,23 @@ export const api = {
   shortLeaveAlerts: () => request('/alerts/short-leave'),
   internEndingAlerts: () => request('/alerts/intern-ending'),
   birthdayReminders: () => request('/alerts/birthdays'),
+  pettyCashSummary: () => request('/boss/petty-cash/summary'),
+  pettyCashHistory: (attenderId = '') =>
+    request(`/boss/petty-cash/history${attenderId ? `?attender_id=${encodeURIComponent(attenderId)}` : ''}`),
+  addPettyCash: (payload) =>
+    request('/boss/petty-cash/add', { method: 'POST', body: JSON.stringify(payload) }),
+  addPettyCashExpense: (payload) =>
+    request('/boss/petty-cash/expense', {
+      method: 'POST',
+      body: payload instanceof FormData ? payload : JSON.stringify(payload),
+    }),
+  attenderPettyCashSummary: () => request('/attender/petty-cash/summary'),
+  attenderPettyCashHistory: () => request('/attender/petty-cash/history'),
+  submitAttenderExpense: (payload) =>
+    request('/attender/petty-cash/expense', {
+      method: 'POST',
+      body: payload instanceof FormData ? payload : JSON.stringify(payload),
+    }),
   myBirthdayWishCard: () => request('/staff/birthday-wish-card'),
   branchBirthdayWishCards: () => request('/staff/branch-birthday-cards'),
   updateMyProfilePhoto: (file) => {

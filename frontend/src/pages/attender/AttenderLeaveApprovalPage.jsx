@@ -67,7 +67,7 @@ export default function AttenderLeaveApprovalPage({ token }) {
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>ID</th><th>Staff</th><th>Type</th><th>Slot/Time</th><th>Start</th><th>Days</th><th>Action</th></tr>
+            <tr><th>ID</th><th>Staff</th><th>Type</th><th>Reason</th><th>Slot/Time</th><th>Start</th><th>Days</th><th>Action</th></tr>
           </thead>
           <tbody>
             {rows.map((row) => (
@@ -75,6 +75,7 @@ export default function AttenderLeaveApprovalPage({ token }) {
                 <td>{row.id}</td>
                 <td>{row.staff?.name ?? '-'}</td>
                 <td>{row.leave_type}</td>
+                <td>{row.reason ?? '-'}</td>
                 <td>{slotOrTime(row)}</td>
                 <td>{row.start_date}</td>
                 <td>{row.days_count}</td>
@@ -97,7 +98,7 @@ export default function AttenderLeaveApprovalPage({ token }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Staff</th><th>Type</th><th>Slot/Time</th><th>Start</th><th>Days</th><th>Status</th><th>Decision At</th></tr>
+              <tr><th>ID</th><th>Staff</th><th>Type</th><th>Reason</th><th>Slot/Time</th><th>Start</th><th>Days</th><th>Status</th><th>Decision At</th></tr>
             </thead>
             <tbody>
               {historyRows.map((row) => (
@@ -105,6 +106,7 @@ export default function AttenderLeaveApprovalPage({ token }) {
                   <td>{row.id}</td>
                   <td>{row.staff?.name ?? '-'}</td>
                   <td>{row.leave_type}</td>
+                  <td>{row.reason ?? '-'}</td>
                   <td>{slotOrTime(row)}</td>
                   <td>{row.start_date}</td>
                   <td>{row.days_count}</td>
@@ -114,7 +116,7 @@ export default function AttenderLeaveApprovalPage({ token }) {
               ))}
               {historyRows.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="text-center text-slate-500">No leave request history.</td>
+                  <td colSpan="9" className="text-center text-slate-500">No leave request history.</td>
                 </tr>
               )}
             </tbody>

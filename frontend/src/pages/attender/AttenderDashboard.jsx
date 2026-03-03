@@ -8,6 +8,7 @@ import AttenderLeaveCalendarPage from './AttenderLeaveCalendarPage';
 import AttenderTaskLogsPage from './AttenderTaskLogsPage';
 import AttenderLatePermissionPage from './AttenderLatePermissionPage';
 import AttenderLeaveApprovalPage from './AttenderLeaveApprovalPage';
+import AttenderPettyCashPage from './AttenderPettyCashPage';
 import AttendanceDetailsPage from '../shared/AttendanceDetailsPage';
 import LeaveCountsPage from '../shared/LeaveCountsPage';
 import BirthdayRemindersPage from '../shared/BirthdayRemindersPage';
@@ -20,6 +21,7 @@ const baseMenu = [
   { key: 'tasklogs', label: 'View Task Logs' },
   { key: 'late', label: 'Late Tasklog Approvals' },
   { key: 'leave-approve', label: 'Leave Approvals' },
+  { key: 'petty-cash', label: 'Petty Cash' },
   { key: 'leave-counts', label: 'Leave Counts' },
   { key: 'birthday-reminders', label: 'Birthday Reminders' },
 ];
@@ -83,6 +85,7 @@ export default function AttenderDashboard({ user, token, onLogout }) {
         {active === 'tasklogs' && <AttenderTaskLogsPage token={token} />}
         {active === 'late' && <AttenderLatePermissionPage token={token} />}
         {active === 'leave-approve' && <AttenderLeaveApprovalPage token={token} />}
+        {active === 'petty-cash' && <AttenderPettyCashPage token={token} />}
         {active === 'leave-counts' && <LeaveCountsPage token={token} title="Branch Staff Leave Counts" />}
         {active === 'birthday-reminders' && <BirthdayRemindersPage token={token} title="Branch Staff Birthday Reminders" />}
       </RoleLayout>

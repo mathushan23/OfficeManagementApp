@@ -32,21 +32,14 @@ export default function StaffLeavePage({ token }) {
     setSubmitting(true);
     const fd = new FormData(form);
     const startDate = String(fd.get('start_date') || '');
-    const today = new Date().toISOString().slice(0, 10);
     if (!startDate) {
       setIsError(true);
       setMessage('Start date is required.');
       setSubmitting(false);
       return;
     }
-    if (startDate < today) {
-      setIsError(true);
-      setMessage('Start date cannot be in the past.');
-      setSubmitting(false);
-      return;
-    }
 
-    if (leaveType === 'full_day') {
+    if (leaveType === 'full_day' || leaveType === 'special_leave') {
       const days = Number(fd.get('days_count') || 0);
       if (!Number.isInteger(days) || days < 1 || days > 30) {
         setIsError(true);
@@ -92,7 +85,7 @@ export default function StaffLeavePage({ token }) {
       await api.createLeaveRequest(token, {
         leave_type: fd.get('leave_type'),
         start_date: startDate,
-        days_count: leaveType === 'full_day' ? Number(fd.get('days_count') || 1) : 1,
+        days_count: (leaveType === 'full_day' || leaveType === 'special_leave') ? Number(fd.get('days_count') || 1) : 1,
         half_day_slot: leaveType === 'half_day' ? fd.get('half_day_slot') : null,
         short_start_time: leaveType === 'short_leave' ? fd.get('short_start_time') : null,
         short_end_time: leaveType === 'short_leave' ? fd.get('short_end_time') : null,
@@ -122,11 +115,13 @@ export default function StaffLeavePage({ token }) {
         <form className="form" onSubmit={submit}>
           <SelectInput label="Type" name="leave_type" value={leaveType} onChange={(e) => setLeaveType(e.target.value)}>
             <option value="full_day">Full Day</option>
+            <option value="special_leave">Special Leave (Boss)</option>
             <option value="half_day">Half Day</option>
             <option value="short_leave">Short Leave</option>
           </SelectInput>
-          <TextInput label="Start Date" name="start_date" type="date" min={new Date().toISOString().slice(0, 10)} required />
-          {leaveType === 'full_day' && (
+          <TextInput label="Start Date" name="start_date" type="date" required />
+
+          {(leaveType === 'full_day' || leaveType === 'special_leave') && (
             <TextInput label="How Many Days (excluding Sundays in backend)" name="days_count" type="number" min="1" defaultValue="1" required />
           )}
           {leaveType === 'half_day' && (
@@ -197,4 +192,3 @@ export default function StaffLeavePage({ token }) {
     </div>
   );
 }
-

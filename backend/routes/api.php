@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\TaskLogController;
 use App\Http\Controllers\Api\AttenderController;
+use App\Http\Controllers\Api\PettyCashController;
 
 Route::post('/auth/pin-login', [AuthController::class, 'pinLogin']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -50,6 +51,10 @@ Route::middleware('jwt.cookie')->group(function () {
     Route::post('/tasklogs/{taskLog}/allow-late-submit', [TaskLogController::class, 'allowLateSubmit']);
     Route::post('/leave-requests/{leaveRequest}/decision', [LeaveController::class, 'decide']);
     Route::get('/leave-counts', [LeaveController::class, 'leaveCounts']);
+    Route::get('/leave-counts/{user}/details', [LeaveController::class, 'leaveDetails']);
+    Route::get('/attender/petty-cash/summary', [PettyCashController::class, 'mySummary']);
+    Route::get('/attender/petty-cash/history', [PettyCashController::class, 'myHistory']);
+    Route::post('/attender/petty-cash/expense', [PettyCashController::class, 'submitExpense']);
 
     // Boss
     Route::get('/boss/attendance/details', [AttendanceController::class, 'details']);
@@ -62,4 +67,8 @@ Route::middleware('jwt.cookie')->group(function () {
     Route::get('/alerts/intern-ending', [LeaveController::class, 'internEndingAlerts']);
     Route::get('/boss/leave-counts', [LeaveController::class, 'leaveCounts']);
     Route::patch('/boss/leave-counts/{user}', [LeaveController::class, 'updateLeaveCount']);
+    Route::get('/boss/petty-cash/summary', [PettyCashController::class, 'summary']);
+    Route::get('/boss/petty-cash/history', [PettyCashController::class, 'history']);
+    Route::post('/boss/petty-cash/add', [PettyCashController::class, 'addPettyCash']);
+    Route::post('/boss/petty-cash/expense', [PettyCashController::class, 'addExpense']);
 });

@@ -6,9 +6,11 @@ import BossStaffDetailsPage from './BossStaffDetailsPage';
 import BossStaffTaskLogsPage from './BossStaffTaskLogsPage';
 import BossAttenderPage from './BossAttenderPage';
 import BossLeaveApprovalPage from './BossLeaveApprovalPage';
+import BossLeaveCalendarPage from './BossLeaveCalendarPage';
 import BossShortLeaveAlertsPage from './BossShortLeaveAlertsPage';
 import BossInternEndingAlertsPage from './BossInternEndingAlertsPage';
 import BossChangePasswordPage from './BossChangePasswordPage';
+import BossPettyCashPage from './BossPettyCashPage';
 import AttendanceDetailsPage from '../shared/AttendanceDetailsPage';
 import LeaveCountsPage from '../shared/LeaveCountsPage';
 import BirthdayRemindersPage from '../shared/BirthdayRemindersPage';
@@ -19,9 +21,11 @@ const baseMenu = [
   { key: 'attendance-details', label: 'Attendance Details' },
   { key: 'attenders', label: 'Manage Attenders' },
   { key: 'leave-approve', label: 'Leave Approvals' },
+  { key: 'leave-calendar', label: 'Leave Calendar' },
   { key: 'short-alerts', label: 'Short Leave Alerts' },
   { key: 'intern-alerts', label: 'Intern End Alerts' },
   { key: 'leave-counts', label: 'Leave Counts' },
+  { key: 'petty-cash', label: 'Petty Cash' },
   { key: 'birthday-reminders', label: 'Birthday Reminders' },
   { key: 'change-password', label: 'Change Password' },
 ];
@@ -29,6 +33,7 @@ const baseMenu = [
 export default function BossDashboard({ user, token, onLogout }) {
   const [active, setActive] = useState('staff-details');
   const [birthdayRows, setBirthdayRows] = useState([]);
+  const [pettyLowCount, setPettyLowCount] = useState(0);
   const hideKey = `om:dismiss:weekly-birthday-chart:boss:${user?.id ?? 'unknown'}`;
   const [hideBirthdayChart, setHideBirthdayChart] = useState(
     () => typeof window !== 'undefined' && window.sessionStorage?.getItem(hideKey) === '1'
@@ -38,9 +43,11 @@ export default function BossDashboard({ user, token, onLogout }) {
     () => baseMenu.map((item) => (
       item.key === 'birthday-reminders'
         ? { ...item, badge: birthdayRows.length }
-        : item
+        : item.key === 'petty-cash'
+          ? { ...item, badge: pettyLowCount }
+          : item
     )),
-    [birthdayRows.length]
+    [birthdayRows.length, pettyLowCount]
   );
 
   useEffect(() => {
@@ -54,6 +61,19 @@ export default function BossDashboard({ user, token, onLogout }) {
     };
 
     notifyBirthday();
+  }, [token]);
+
+  useEffect(() => {
+    const loadPettyLowBalance = async () => {
+      try {
+        const data = await api.pettyCashSummary();
+        setPettyLowCount(Number(data?.low_balance_count || 0));
+      } catch {
+        setPettyLowCount(0);
+      }
+    };
+
+    loadPettyLowBalance();
   }, [token]);
 
   return (
@@ -83,9 +103,11 @@ export default function BossDashboard({ user, token, onLogout }) {
         {active === 'attendance-details' && <AttendanceDetailsPage token={token} title="All Staff Attendance + Tasklog Status" />}
         {active === 'attenders' && <BossAttenderPage token={token} />}
         {active === 'leave-approve' && <BossLeaveApprovalPage token={token} />}
+        {active === 'leave-calendar' && <BossLeaveCalendarPage token={token} />}
         {active === 'short-alerts' && <BossShortLeaveAlertsPage token={token} />}
         {active === 'intern-alerts' && <BossInternEndingAlertsPage token={token} />}
         {active === 'leave-counts' && <LeaveCountsPage token={token} title="All Staff Leave Counts" canEdit />}
+        {active === 'petty-cash' && <BossPettyCashPage token={token} onLowBalanceCountChange={setPettyLowCount} />}
         {active === 'birthday-reminders' && <BirthdayRemindersPage token={token} title="Staff Birthday Reminders" />}
         {active === 'change-password' && <BossChangePasswordPage token={token} />}
       </RoleLayout>

@@ -1,13 +1,10 @@
 ﻿import { useState, useEffect, useRef } from 'react';
-import { jsPDF } from 'jspdf';
 import { toPng } from 'html-to-image';
 import { resolveImageUrl } from '../api';
 import BrandLogo from './BrandLogo';
 
 // Styles
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=DM+Sans:wght@400;600;700&display=swap');
-
   :root {
     --gold: #ffd154;
     --amber: #ff9f1c;
@@ -452,7 +449,7 @@ export default function StaffBirthdayPopup({ open, card, onClose }) {
 
   if (!open || !card) return null;
 
-  const downloadPdf = async () => {
+  const downloadImage = async () => {
     setDownloading(true);
     try {
       if (!cardRef.current) {
@@ -468,22 +465,18 @@ export default function StaffBirthdayPopup({ open, card, onClose }) {
         pixelRatio: 3,
         backgroundColor: '#0b0820',
       });
-      const image = new Image();
-      image.src = imageData;
-      await new Promise((resolve, reject) => {
-        image.onload = resolve;
-        image.onerror = reject;
-      });
-
-      const imgWidth = image.width;
-      const imgHeight = image.height;
-      const pdfWidth = 420;
-      const pdfHeight = (imgHeight / imgWidth) * pdfWidth;
-      const doc = new jsPDF({ unit: 'pt', format: [pdfWidth, pdfHeight], orientation: 'portrait' });
-      doc.addImage(imageData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
       const name = String(card.staff_name || 'staff').replace(/\s+/g, '_');
-      doc.save(`birthday_card_${name}_${card.birthday_date}.pdf`);
+      const fileName = `birthday_card_${name}_${card.birthday_date}.png`;
+      const link = document.createElement('a');
+      link.href = imageData;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to generate image.';
+      console.error('Birthday image export failed:', err);
+      window.alert(message);
     } finally {
       setExportMobileStyle(false);
       setExportMode(false);
@@ -491,7 +484,11 @@ export default function StaffBirthdayPopup({ open, card, onClose }) {
     }
   };
 
-  const photoSrc = card.profile_photo_data || (card.profile_photo ? resolveImageUrl(card.profile_photo) : null);
+  // During image export, never use remote image URLs (CORS blocks html-to-image fetch).
+  // Use embedded base64 data only; otherwise fallback avatar is rendered.
+  const photoSrc = exportMode
+    ? (card.profile_photo_data || null)
+    : (card.profile_photo_data || (card.profile_photo ? resolveImageUrl(card.profile_photo) : null));
 
   return (
     <>
@@ -576,8 +573,8 @@ export default function StaffBirthdayPopup({ open, card, onClose }) {
 
             <div className="bd-actions">
               <button type="button" className="bd-btn bd-btn-primary" onClick={onClose}>Close</button>
-              <button type="button" className="bd-btn bd-btn-ghost" onClick={downloadPdf} disabled={downloading}>
-                {downloading ? `${UI_ICONS.hourglass} Preparing PDF...` : `${UI_ICONS.download} Download PDF`}
+              <button type="button" className="bd-btn bd-btn-ghost" onClick={downloadImage} disabled={downloading}>
+                {downloading ? `${UI_ICONS.hourglass} Preparing Image...` : `${UI_ICONS.download} Download Image`}
               </button>
             </div>
           </div>

@@ -10,7 +10,7 @@ use App\Models\TaskLogLatePermission;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class TaskLogController extends Controller
 {
@@ -138,12 +138,35 @@ class TaskLogController extends Controller
             'image' => ['required', 'image', 'max:4096'],
         ]);
 
-        $path = $validated['image']->store('tasklog-proofs', 'public');
+        $path = $this->storePublicImage($validated['image'], 'tasklog-proofs');
+        $appUrl = rtrim((string) config('app.url', ''), '/');
+        $url = $appUrl !== '' ? "{$appUrl}/{$path}" : "/{$path}";
 
         return response()->json([
             'path' => $path,
-            'url' => Storage::disk('public')->url($path),
+            'url' => $url,
         ], 201);
+    }
+
+    private function storePublicImage($file, string $folder): string
+    {
+        $targetDir = public_path($folder);
+        if (!is_dir($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+
+        $ext = strtolower((string) $file->getClientOriginalExtension());
+        if ($ext === '') {
+            $ext = strtolower((string) $file->extension());
+        }
+        if ($ext === '') {
+            $ext = 'jpg';
+        }
+
+        $filename = Str::random(40) . '.' . $ext;
+        $file->move($targetDir, $filename);
+
+        return $folder . '/' . $filename;
     }
 
     public function allowLateSubmit(Request $request, TaskLog $taskLog)

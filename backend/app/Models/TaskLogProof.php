@@ -22,6 +22,17 @@ class TaskLogProof extends Model
             return $path;
         }
 
+        $normalized = ltrim($path, '/');
+        $appUrl = rtrim((string) (config('app.url') ?? ''), '/');
+
+        if (
+            str_starts_with($normalized, 'tasklog-proofs/')
+            || str_starts_with($normalized, 'staff-profiles/')
+            || str_starts_with($normalized, 'petty-cash-proofs/')
+        ) {
+            return $appUrl !== '' ? "{$appUrl}/{$normalized}" : "/{$normalized}";
+        }
+
         if (str_starts_with($path, '/storage/')) {
             $path = substr($path, 9);
         }
