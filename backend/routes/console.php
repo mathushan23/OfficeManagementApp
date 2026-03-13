@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('birthday:wishes:auto')
     ->dailyAt('00:00')
     ->timezone('Asia/Colombo');
+
+Schedule::command('projects:send-reminders')
+    ->dailyAt('08:00')
+    ->timezone('Asia/Colombo');

@@ -29,12 +29,11 @@ export default function BossInternEndingAlertsPage({ token }) {
           </div>
           <h3 className="text-xl font-bold text-slate-900">Intern Period Ending Alerts</h3>
         </div>
-        <button onClick={load} className="ghost">Refresh</button>
       </div>
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Effective End Date</th><th>Days Left</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Actual End Date</th><th>Extended End Date</th><th>Days Left</th></tr>
           </thead>
           <tbody>
             {rows.map((row) => (
@@ -43,13 +42,14 @@ export default function BossInternEndingAlertsPage({ token }) {
                 <td>{row.name}</td>
                 <td>{row.office_id}</td>
                 <td>{row.branch}</td>
+                <td>{row.intern_end_date ?? '-'}</td>
                 <td>{row.effective_intern_end_date}</td>
                 <td>{row.days_left}</td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan="6" className="text-center text-slate-500">No intern period ending within next 7 days.</td>
+                <td colSpan="7" className="text-center text-slate-500">No intern period ending within next 7 days.</td>
               </tr>
             )}
           </tbody>

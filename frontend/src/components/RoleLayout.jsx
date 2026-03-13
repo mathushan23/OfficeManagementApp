@@ -18,7 +18,13 @@ export default function RoleLayout({
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
+  const [expandedMenuKey, setExpandedMenuKey] = useState('');
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const fileInputRef = useRef(null);
+  const mainRef = useRef(null);
+  const pullStartYRef = useRef(0);
+  const pullActiveRef = useRef(false);
 
   const profilePhotoUrl = user?.profile_photo ? resolveImageUrl(user.profile_photo) : '';
 
@@ -90,24 +96,70 @@ export default function RoleLayout({
       </div>
 
       <nav className="grid gap-2.5">
-        {items.map((item) => (
-          <button
-            key={item.key}
-            className={activeKey === item.key
-              ? 'rounded-xl bg-gradient-to-r from-[#fd7e14] to-orange-500 px-4 py-3 text-left text-sm font-bold text-white shadow-lg shadow-orange-500/40'
-              : 'rounded-xl bg-slate-800/85 px-4 py-3 text-left text-sm font-semibold text-slate-100 hover:bg-slate-700/90'}
-            onClick={() => selectAndClose(item.key)}
-          >
-            <span className="flex items-center justify-between gap-2">
-              <span>{item.label}</span>
-              {Number(item.badge) > 0 && (
-                <span className="min-w-6 rounded-full bg-rose-500 px-2 py-0.5 text-center text-xs font-bold text-white shadow shadow-rose-500/40">
-                  {item.badge}
+        {items.map((item) => {
+          const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+          const childActive = hasChildren && item.children.some((child) => child.key === activeKey);
+          const parentActive = activeKey === item.key || childActive;
+
+          return (
+            <div key={item.key} className="group">
+              <button
+                className={parentActive
+                  ? 'w-full rounded-xl !bg-gradient-to-r !from-orange-500 !to-amber-500 px-4 py-3 text-left text-sm font-bold !text-white shadow-lg shadow-orange-500/35'
+                  : 'w-full rounded-xl border border-slate-700/80 !bg-slate-800/90 px-4 py-3 text-left text-sm font-semibold !text-slate-100 hover:!bg-slate-700/95'}
+                onClick={() => {
+                  if (!hasChildren) {
+                    selectAndClose(item.key);
+                    return;
+                  }
+                  setExpandedMenuKey((prev) => (prev === item.key ? '' : item.key));
+                }}
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span>{item.label}</span>
+                  <span className="flex items-center gap-2">
+                    {Number(item.badge) > 0 && (
+                      <span className="min-w-6 rounded-full bg-rose-500 px-2 py-0.5 text-center text-xs font-bold text-white shadow shadow-rose-500/40">
+                        {item.badge}
+                      </span>
+                    )}
+                    {hasChildren && (
+                      <span className="text-xs text-white/80">{expandedMenuKey === item.key ? '▲' : '▼'}</span>
+                    )}
+                  </span>
                 </span>
+              </button>
+
+              {hasChildren && (
+                <div
+                  className={`mt-2 grid gap-2 rounded-xl border border-slate-700/80 !bg-slate-900/70 p-2 shadow-lg shadow-slate-950/35 ${expandedMenuKey === item.key || childActive ? 'grid' : 'hidden'} lg:hidden lg:group-hover:grid lg:group-focus-within:grid`}
+                >
+                  {item.children.map((child) => (
+                    <button
+                      key={child.key}
+                      className={activeKey === child.key
+                        ? 'w-full rounded-lg border border-cyan-300/70 !bg-cyan-50 px-3 py-2 text-left text-xs font-bold !text-slate-900 shadow-sm shadow-cyan-700/20'
+                        : 'w-full rounded-lg border border-slate-700/70 !bg-transparent px-3 py-2 text-left text-xs font-semibold !text-slate-200 hover:!bg-slate-800/85'}
+                      onClick={() => selectAndClose(child.key)}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2">
+                          <span className={activeKey === child.key ? 'h-1.5 w-1.5 rounded-full bg-cyan-500' : 'h-1.5 w-1.5 rounded-full bg-slate-500'} />
+                          <span>{child.label}</span>
+                        </span>
+                        {Number(child.badge) > 0 && (
+                          <span className="min-w-6 rounded-full bg-rose-500 px-2 py-0.5 text-center text-[10px] font-bold text-white shadow shadow-rose-500/40">
+                            {child.badge}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               )}
-            </span>
-          </button>
-        ))}
+            </div>
+          );
+        })}
       </nav>
 
       <button
@@ -128,6 +180,44 @@ export default function RoleLayout({
       )}
     </div>
   );
+
+  const handleMainTouchStart = (event) => {
+    if (isRefreshing || mobileOpen) return;
+    const main = mainRef.current;
+    if (!main) return;
+    if (main.scrollTop > 0) return;
+    if (!event.touches?.length) return;
+    pullStartYRef.current = event.touches[0].clientY;
+    pullActiveRef.current = true;
+  };
+
+  const handleMainTouchMove = (event) => {
+    if (!pullActiveRef.current || isRefreshing || mobileOpen) return;
+    const touchY = event.touches?.[0]?.clientY;
+    if (typeof touchY !== 'number') return;
+    const delta = touchY - pullStartYRef.current;
+
+    if (delta <= 0) {
+      setPullDistance(0);
+      return;
+    }
+
+    const damped = Math.min(120, delta * 0.45);
+    setPullDistance(damped);
+    if (damped > 0) {
+      event.preventDefault();
+    }
+  };
+
+  const handleMainTouchEnd = () => {
+    const shouldRefresh = pullDistance >= 70 && !isRefreshing;
+    pullActiveRef.current = false;
+    setPullDistance(0);
+    if (!shouldRefresh) return;
+
+    setIsRefreshing(true);
+    window.location.reload();
+  };
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-orange-50/20 to-slate-100 lg:grid lg:grid-cols-[320px_1fr]">
@@ -167,7 +257,27 @@ export default function RoleLayout({
         {MenuPanel}
       </aside>
 
-      <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-7 lg:h-screen lg:p-8">{children}</main>
+      <main
+        ref={mainRef}
+        className="relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-4 md:p-7 lg:h-screen lg:p-8"
+        onTouchStart={handleMainTouchStart}
+        onTouchMove={handleMainTouchMove}
+        onTouchEnd={handleMainTouchEnd}
+        onTouchCancel={handleMainTouchEnd}
+      >
+        <div
+          className="pointer-events-none sticky top-0 z-20 flex justify-center transition-all duration-150"
+          style={{
+            height: pullDistance > 0 ? `${pullDistance}px` : '0px',
+            opacity: pullDistance > 0 || isRefreshing ? 1 : 0,
+          }}
+        >
+          <div className="mt-1 rounded-full bg-slate-900/85 px-3 py-1 text-[11px] font-semibold text-white shadow-md">
+            {isRefreshing ? 'Refreshing...' : pullDistance >= 70 ? 'Release to refresh' : 'Pull to refresh'}
+          </div>
+        </div>
+        {children}
+      </main>
 
       {enableProfilePhotoActions && photoActionOpen && (
         <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/70 p-4" onClick={() => setPhotoActionOpen(false)}>

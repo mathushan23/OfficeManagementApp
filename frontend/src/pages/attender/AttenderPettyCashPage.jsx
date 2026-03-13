@@ -115,9 +115,6 @@ export default function AttenderPettyCashPage() {
             </div>
             <h3 className="text-xl font-bold text-slate-900">Petty Cash</h3>
           </div>
-          <button type="button" className="ghost" onClick={loadAll} disabled={loading}>
-            {loading ? 'Loading...' : 'Refresh'}
-          </button>
         </div>
 
         <div className="mb-4 grid gap-3 md:grid-cols-2">

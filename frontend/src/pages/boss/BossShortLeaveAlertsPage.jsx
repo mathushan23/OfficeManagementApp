@@ -29,7 +29,6 @@ export default function BossShortLeaveAlertsPage({ token }) {
           </div>
           <h3 className="text-xl font-bold text-slate-900">Short Leave Alerts</h3>
         </div>
-        <button onClick={load} className="ghost">🔄 Refresh</button>
       </div>
       <div className="table-wrap">
         <table>

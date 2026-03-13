@@ -62,7 +62,6 @@ export default function AttenderLeaveApprovalPage({ token }) {
           </div>
           <h3 className="text-xl font-bold text-slate-900">Leave Request Approvals</h3>
         </div>
-        <button onClick={load} className="ghost">🔄 Refresh</button>
       </div>
       <div className="table-wrap">
         <table>

@@ -43,12 +43,11 @@ export default function BossStaffDetailsPage({ token }) {
             </div>
             <h3 className="text-xl font-bold text-slate-900">Staff Details</h3>
           </div>
-          <button onClick={load} className="ghost">Refresh</button>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Date of Birth</th><th>Joined Date</th><th>Type</th><th>Intern End Date</th><th>Status</th></tr>
+              <tr><th>ID</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Date of Birth</th><th>Joined Date</th><th>Type</th><th>Actual Intern End</th><th>Extended Intern End</th><th>Status</th></tr>
             </thead>
             <tbody>
               {rows.map((row) => (
@@ -64,13 +63,14 @@ export default function BossStaffDetailsPage({ token }) {
                   <td>{formatDate(row.date_of_birth)}</td>
                   <td>{formatDate(row.joining_date)}</td>
                   <td>{row.employment_type ?? 'permanent'}</td>
+                  <td>{(row.employment_type ?? 'permanent') === 'intern' ? formatDate(row.intern_end_date) : '-'}</td>
                   <td>{(row.employment_type ?? 'permanent') === 'intern' ? formatDate(row.effective_intern_end_date ?? row.intern_end_date) : '-'}</td>
                   <td>{row.status}</td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan="9" className="text-center text-slate-500">No staff records found.</td>
+                  <td colSpan="10" className="text-center text-slate-500">No staff records found.</td>
                 </tr>
               )}
             </tbody>
@@ -88,7 +88,8 @@ export default function BossStaffDetailsPage({ token }) {
             <p><span className="font-semibold">Date of Birth:</span> {formatDate(selected.date_of_birth)}</p>
             <p><span className="font-semibold">Joined Date:</span> {formatDate(selected.joining_date)}</p>
             <p><span className="font-semibold">Type:</span> {selected.employment_type ?? 'permanent'}</p>
-            <p><span className="font-semibold">Intern End Date:</span> {(selected.employment_type ?? 'permanent') === 'intern' ? formatDate(selected.effective_intern_end_date ?? selected.intern_end_date) : '-'}</p>
+            <p><span className="font-semibold">Actual Intern End Date:</span> {(selected.employment_type ?? 'permanent') === 'intern' ? formatDate(selected.intern_end_date) : '-'}</p>
+            <p><span className="font-semibold">Extended Intern End Date:</span> {(selected.employment_type ?? 'permanent') === 'intern' ? formatDate(selected.effective_intern_end_date ?? selected.intern_end_date) : '-'}</p>
             <p><span className="font-semibold">Status:</span> {selected.status}</p>
             <p><span className="font-semibold">Email:</span> {selected.email || '-'}</p>
           </div>

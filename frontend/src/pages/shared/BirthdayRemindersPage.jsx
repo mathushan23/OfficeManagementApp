@@ -32,7 +32,6 @@ export default function BirthdayRemindersPage({ token, title = 'Birthday Reminde
           </div>
           <h3 className="text-xl font-bold text-slate-900">{title}</h3>
         </div>
-        <button onClick={load} className="ghost">Refresh</button>
       </div>
       <div className="table-wrap">
         <table>

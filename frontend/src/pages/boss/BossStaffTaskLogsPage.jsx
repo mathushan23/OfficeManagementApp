@@ -75,7 +75,6 @@ export default function BossStaffTaskLogsPage({ token }) {
             </div>
             <h3 className="text-xl font-bold text-slate-900">Today Tasklog Status ({today})</h3>
           </div>
-          <button onClick={loadTodayStatus} className="ghost">Refresh</button>
         </div>
         <div className="table-wrap">
           <table>

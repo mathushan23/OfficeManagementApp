@@ -62,7 +62,6 @@ export default function AttenderTaskLogsPage({ token }) {
             </div>
             <h3 className="text-xl font-bold text-slate-900">View Staff Task Logs</h3>
           </div>
-          <button onClick={loadStaff} className="ghost">🔄 Refresh Staff</button>
         </div>
         <div className="table-wrap">
           <table>

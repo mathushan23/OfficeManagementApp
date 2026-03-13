@@ -244,7 +244,7 @@ export default function AttenderStaffPage({ token }) {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Photo</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Date of Birth</th><th>Joined Date</th><th>Type</th><th>Intern End Date</th><th>Status</th><th>Action</th></tr>
+              <tr><th>ID</th><th>Photo</th><th>Name</th><th>Office ID</th><th>Branch</th><th>Date of Birth</th><th>Joined Date</th><th>Type</th><th>Actual Intern End</th><th>Extended Intern End</th><th>Status</th><th>Action</th></tr>
             </thead>
             <tbody>
               {rows.map((row) => (
@@ -267,6 +267,11 @@ export default function AttenderStaffPage({ token }) {
                   <td>{formatDate(row.date_of_birth)}</td>
                   <td>{formatDate(row.joining_date)}</td>
                   <td>{row.employment_type ?? 'permanent'}</td>
+                  <td>
+                    {(row.employment_type ?? 'permanent') === 'intern'
+                      ? formatDate(row.intern_end_date)
+                      : '-'}
+                  </td>
                   <td>
                     {(row.employment_type ?? 'permanent') === 'intern'
                       ? formatDate(row.effective_intern_end_date ?? row.intern_end_date)

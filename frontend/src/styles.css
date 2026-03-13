@@ -189,7 +189,7 @@ input[type="file"]::file-selector-button {
    ============================================ */
 
 button {
-  @apply rounded-xl bg-gradient-to-r from-[#fd7e14] to-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.97];
+  @apply rounded-xl bg-gradient-to-r from-[#fd7e14] to-orange-500 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.97];
   position: relative;
   overflow: hidden;
 }
@@ -544,7 +544,7 @@ button.danger {
   
   /* Buttons Mobile */
   button {
-    @apply rounded-lg px-4 py-2.5 text-xs;
+    @apply rounded-lg px-3 py-2 text-[11px];
   }
   
   /* Icon Badges Mobile */
@@ -615,7 +615,7 @@ button.danger {
   }
   
   button {
-    @apply px-4 py-2.5;
+    @apply px-3.5 py-2 text-xs;
   }
   
   .icon-badge {
@@ -684,7 +684,7 @@ button.danger {
   }
   
   button {
-    @apply py-2;
+    @apply py-1.5;
   }
   
   textarea,

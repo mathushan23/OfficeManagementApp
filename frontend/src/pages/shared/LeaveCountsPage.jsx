@@ -94,7 +94,8 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
               <th>Branch</th>
               <th>Joining Date</th>
               <th>Type</th>
-              <th>Intern End Date</th>
+              <th>Actual Intern End Date</th>
+              <th>Extended Intern End Date</th>
               <th>Attended Days</th>
               <th>Leaves</th>
               <th>Action</th>
@@ -109,6 +110,7 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
                 <td>{row.branch}</td>
                 <td>{row.joining_date}</td>
                 <td>{row.employment_type}</td>
+                <td>{row.employment_type === 'intern' ? (row.intern_end_date_base ?? row.intern_end_date ?? '-') : '-'}</td>
                 <td>{row.employment_type === 'intern' ? (row.intern_end_date ?? '-') : '-'}</td>
                 <td>{row.attended_days}</td>
                 <td>{row.leave_days}</td>
@@ -128,7 +130,7 @@ export default function LeaveCountsPage({ token, title = 'Leave Counts', selfOnl
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={10} className="text-center text-slate-500">No leave count data.</td>
+                <td colSpan={11} className="text-center text-slate-500">No leave count data.</td>
               </tr>
             )}
           </tbody>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../api';
 import { Message } from '../../components/FormBits';
 
-export default function AttenderLatePermissionPage({ token }) {
+export default function AttenderLatePermissionPage({ token, onPendingCountChange }) {
   const [rows, setRows] = useState([]);
   const [historyRows, setHistoryRows] = useState([]);
   const [message, setMessage] = useState('');
@@ -17,6 +17,7 @@ export default function AttenderLatePermissionPage({ token }) {
         api.listLateTaskLogRequests(token, 'rejected'),
       ]);
       setRows(pending);
+      onPendingCountChange?.(Array.isArray(pending) ? pending.length : 0);
       setHistoryRows([...(approved ?? []), ...(rejected ?? [])].sort((a, b) => String(b.requested_at).localeCompare(String(a.requested_at))));
       setIsError(false);
       setMessage('');
@@ -56,7 +57,6 @@ export default function AttenderLatePermissionPage({ token }) {
           </div>
           <h3 className="text-xl font-bold text-slate-900">Late Tasklog Approvals</h3>
         </div>
-        <button onClick={load} className="ghost">🔄 Refresh</button>
       </div>
       <div className="table-wrap">
         <table>

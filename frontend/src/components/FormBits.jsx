@@ -1,14 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import Swal from 'sweetalert2';
 
-export function Message({ message, error }) {
-  const lastMessageRef = useRef('');
-
+export function Message({ message, error, duration = 2600 }) {
   useEffect(() => {
-    if (!message || message === lastMessageRef.current) {
+    if (!message) {
       return;
     }
-    lastMessageRef.current = message;
 
     Swal.fire({
       toast: true,
@@ -16,14 +13,14 @@ export function Message({ message, error }) {
       icon: error ? 'error' : 'success',
       title: message,
       showConfirmButton: false,
-      timer: 2600,
+      timer: duration,
       timerProgressBar: true,
       customClass: {
         popup: 'swal-small-toast',
         title: 'swal-small-toast-title',
       },
     });
-  }, [message, error]);
+  }, [message, error, duration]);
 
   return null;
 }
